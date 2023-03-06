@@ -1,10 +1,3 @@
-from pathlib import Path
-
-from tinydb import TinyDB
-
-from gce2 import config
-
-
 class Player:
     __slots__ = ("firstname", "lastname", "birthday", "federal_id")
 
@@ -24,16 +17,3 @@ class Player:
     @classmethod
     def deserialize(cls, data: dict) -> object:
         return cls(**data)
-
-    @classmethod
-    def new(cls, **kwargs):
-        new_player = cls(**kwargs)
-
-        path = Path(config.PATH_JSONFILE_PLAYER)
-        with TinyDB(
-            path,
-            indent=config.JSON_IDENT,
-            encoding=config.ENCODING,
-        ) as json_file:
-            json_file.insert(new_player.serialize())
-            return new_player
