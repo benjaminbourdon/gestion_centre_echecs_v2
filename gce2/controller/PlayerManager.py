@@ -29,4 +29,7 @@ class PlayerManager:
         ) as json_file:
             player = Query()
             data = json_file.search(player.federal_id == federal_id)
-            return Player.deserialize(data[0])
+            try:
+                return Player.deserialize(data[0])
+            except IndexError:
+                print(f"Aucun joueur connu n'est lié à l'identifiant fédéral {federal_id}")
