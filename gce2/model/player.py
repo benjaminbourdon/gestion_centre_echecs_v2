@@ -12,6 +12,9 @@ class Player:
         for key in self.__slots__:
             setattr(self, key, kwargs[key])
 
+    def __repr__(self) -> str:
+        return f"({self.federal_id}) {self.firstname} {self.lastname} {self.birthday}"
+
     def to_dict(self):
         return {key: getattr(self, key) for key in self.__slots__}
 
