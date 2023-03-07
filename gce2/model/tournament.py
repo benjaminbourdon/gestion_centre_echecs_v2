@@ -26,7 +26,7 @@ class Tournament:
         self.doc_id = doc_id
 
     def __repr__(self):
-        return pformat(self.to_dict(), indent=4, sort_dicts=False)
+        return super().__repr__() + "\n" + pformat(self.to_dict(), indent=4, sort_dicts=False)
 
     def to_dict(self):
         return {
