@@ -40,7 +40,9 @@ class Tournament:
         }
 
     def serialize(self) -> dict:
-        return self.to_dict()
+        dict = self.to_dict()
+        del dict["doc_id"]
+        return dict
 
     @classmethod
     def deserialize(cls, data: dict) -> object:
