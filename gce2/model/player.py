@@ -17,3 +17,16 @@ class Player:
     @classmethod
     def deserialize(cls, data: dict) -> object:
         return cls(**data)
+
+    @staticmethod
+    def federalid_to_int(federal_id):
+        doc_id = []
+        for caracter in federal_id:
+            if not caracter.isdigit():
+                caracter = str(ord(caracter))
+            doc_id.append(caracter)
+        return int("".join(doc_id))
+
+    @property
+    def doc_id(self):
+        return self.federalid_to_int(self.federal_id)

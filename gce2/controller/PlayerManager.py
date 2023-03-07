@@ -1,13 +1,15 @@
-from gce2.model.player import Player
-from tinydb import Query
+from tinydb.table import Document
+
 from gce2 import database
+from gce2.model.player import Player
 
 
 class PlayerManager:
     def post_player(self, data: dict):
         new_player = Player(**data)
         with database.get_connexion_player() as json_file:
-            json_file.insert(new_player.serialize())
+            doc_toinsert = Document(new_player.serialize(), doc_id=new_player.doc_id)
+            json_file.insert(doc_toinsert)
         return new_player
 
     def get_players(self):
@@ -16,9 +18,11 @@ class PlayerManager:
 
     def get_player(self, federal_id):
         with database.get_connexion_player() as json_file:
-            player = Query()
-            data = json_file.search(player.federal_id == federal_id)
-            try:
-                return Player.deserialize(data[0])
-            except IndexError:
-                print(f"Aucun joueur connu n'est lié à l'identifiant fédéral {federal_id}")
+            doc_id = Player.federalid_to_int(federal_id)
+            data = json_file.get(doc_id=doc_id)
+            if data is not None:
+                return Player.deserialize(data)
+            else:
+                print(
+                    f"Aucun joueur connu n'est lié à l'identifiant fédéral {federal_id}"
+                )
