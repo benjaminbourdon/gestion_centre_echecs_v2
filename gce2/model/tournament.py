@@ -1,5 +1,6 @@
 from pprint import pformat
 from gce2.model.round import Round
+from gce2.controller.roundmanager import RoundManager
 
 
 class Tournament:
@@ -71,7 +72,10 @@ class Tournament:
         }
         tournament = cls(**initializing_data)
         if "rounds" in data:
-            tournament.add_rounds_from_json(data["rounds"])
+            round_manager = RoundManager()
+            for round_id in data["rounds"]:
+                round = round_manager.get_round_by_id(round_id)
+                tournament.add_round(round)
         return tournament
 
     @property

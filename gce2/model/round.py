@@ -2,10 +2,16 @@ from pprint import pformat
 
 
 class Round:
-    def __init__(self, name, start_datetime=None, end_datetime=None) -> None:
+
+    CORE_ATTRIBUTES = ("name", "start_datetime", "end_datetime")
+
+    def __init__(
+        self, name, start_datetime=None, end_datetime=None, doc_id=None
+    ) -> None:
         self.name = name
         self.start_datetime = start_datetime
         self.end_datetime = end_datetime
+        self.doc_id = doc_id
 
     def __repr__(self) -> str:
         return (
@@ -20,7 +26,9 @@ class Round:
         return False
 
     def serialize(self) -> dict:
-        return self.__dict__
+        return {
+            attribute: getattr(self, attribute) for attribute in self.CORE_ATTRIBUTES
+        }
 
     @classmethod
     def deserialize(cls, data):
