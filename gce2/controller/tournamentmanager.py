@@ -17,7 +17,7 @@ class TournamentManager:
             ]
 
     def post_tournament(self, core_data):
-        new_tournament = Tournament(**core_data)
+        new_tournament = Tournament.deserialize(core_data)
         with database.get_connexion_tournament() as json_file:
             doc_id = json_file.insert(new_tournament.serialize())
             new_tournament.doc_id = doc_id
@@ -45,3 +45,11 @@ class TournamentManager:
             )
         tournament.last_round.doc_id = id_round
         return tournament
+
+    def add_participant_in_tournament(self, id_tournament, id_participant):
+        with database.get_connexion_tournament() as json_file:
+            json_file.update(
+                operations.add("participants", [id_participant]),
+                doc_ids=[id_tournament],
+            )
+        return self.get_tournament_by_id(id_tournament)

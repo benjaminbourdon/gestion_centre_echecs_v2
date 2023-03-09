@@ -1,6 +1,8 @@
 from pprint import pformat
 from gce2.model.round import Round
+from gce2.model.player import Player
 from gce2.controller.roundmanager import RoundManager
+from gce2.controller.playermanager import PlayerManager
 
 
 class Tournament:
@@ -24,6 +26,7 @@ class Tournament:
         end_date,
         rounds=None,
         doc_id=None,
+        participants=None,
     ) -> None:
 
         self.name = name
@@ -38,6 +41,10 @@ class Tournament:
         if rounds is not None:
             for round in rounds:
                 self.add_round(round)
+        self.participants = []
+        if participants is not None and isinstance(participants, list):
+            for participant in participants:
+                self.add_participant(participant)
 
     def __repr__(self):
         return (
@@ -53,11 +60,23 @@ class Tournament:
         }
 
     def to_dict(self):
-        return {"doc_id": self.doc_id} | self.core_dict | {"rounds": [round.name for round in self.rounds]}
+        return (
+            {"doc_id": self.doc_id}
+            | self.core_dict
+            | {"rounds": [round.name for round in self.rounds]}
+            | {
+                "participants": [
+                    participant.doc_id for participant in self.participants
+                ]
+            }
+        )
 
     def serialize(self) -> dict:
-        round_list = [round.serialize() for round in self.rounds]
-        return self.core_dict | {"rounds": round_list}
+        round_list = [round.doc_id for round in self.rounds if round.doc_id is not None]
+        participant_list = [participant.doc_id for participant in self.participants]
+        return (
+            self.core_dict | {"rounds": round_list} | {"participants": participant_list}
+        )
 
     def add_rounds_from_json(self, list_rounds):
         if isinstance(list_rounds, list):
@@ -76,6 +95,11 @@ class Tournament:
             for round_id in data["rounds"]:
                 round = round_manager.get_round_by_id(round_id)
                 tournament.add_round(round)
+        if "participants" in data:
+            player_manager = PlayerManager()
+            for player_id in data["participants"]:
+                player = player_manager.get_player(player_id)
+                tournament.add_participant(player)
         return tournament
 
     @property
@@ -97,3 +121,7 @@ class Tournament:
         if self.nb_rounds > 0 and not (self.last_round.iscompleted()):
             raise BaseException
         self.rounds.append(round)
+
+    def add_participant(self, participant):
+        if isinstance(participant, Player):
+            self.participants.append(participant)
