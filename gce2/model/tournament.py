@@ -1,8 +1,8 @@
 from pprint import pformat
 from gce2.model.round import Round
 from gce2.model.player import Player
-from gce2.controller.roundmanager import RoundManager
-from gce2.controller.playermanager import PlayerManager
+import gce2.manager.roundmanager as rm
+import gce2.manager.playermanager as pm
 
 
 class Tournament:
@@ -89,14 +89,16 @@ class Tournament:
         initializing_data = {
             attribute: data[attribute] for attribute in cls.CORE_ATTRIBUTES
         }
+        if "doc_id" in data:
+            initializing_data["doc_id"] = int(data["doc_id"])
         tournament = cls(**initializing_data)
         if "rounds" in data:
-            round_manager = RoundManager()
+            round_manager = rm.RoundManager()
             for round_id in data["rounds"]:
                 round = round_manager.get_round_by_id(round_id)
                 tournament.add_round(round)
         if "participants" in data:
-            player_manager = PlayerManager()
+            player_manager = pm.PlayerManager()
             for player_id in data["participants"]:
                 player = player_manager.get_player(player_id)
                 tournament.add_participant(player)
