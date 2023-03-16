@@ -53,6 +53,12 @@ class Tournament:
             + pformat(self.to_dict(), indent=4, sort_dicts=False)
         )
 
+    def __str__(self) -> str:
+        return (
+            f"{self.name} ({self.description}) à {self.place} du {self.start_date} au {self.end_date}."
+            f"Tournoi en {self.max_round} tours."
+        )
+
     @property
     def core_dict(self):
         return {
@@ -77,12 +83,6 @@ class Tournament:
         return (
             self.core_dict | {"rounds": round_list} | {"participants": participant_list}
         )
-
-    def add_rounds_from_json(self, list_rounds):
-        if isinstance(list_rounds, list):
-            for data_round in list_rounds:
-                round = Round.deserialize(data_round)
-                self.add_round(round)
 
     @classmethod
     def deserialize(cls, data: dict) -> object:

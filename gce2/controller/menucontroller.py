@@ -1,10 +1,12 @@
 from gce2.controller.playercontroller import PlayerController
+from gce2.controller.tournamentcontroller import TournamentController
 from gce2.view.menuview import MenuView
 
 
 class MenuController:
     def __init__(self):
         self.playercontroller = PlayerController()
+        self.tournamentcontroller = TournamentController()
         self.view = MenuView()
         self.quit = False
 
@@ -12,7 +14,10 @@ class MenuController:
 
     @property
     def main_menu(self):
-        return [("Menu Joueur", self.go_player_menu)]
+        return [
+            ("Menu Joueur", self.go_player_menu),
+            ("Menu Tournoi", self.go_tournament_menu),
+        ]
 
     def executate(self):
         while not self.quit:
@@ -48,4 +53,10 @@ class MenuController:
         self.current_menu = [
             ("Ajouter un joueur", self.playercontroller.add_player),
             ("Voir la liste des joueurs", self.playercontroller.print_players),
+        ]
+
+    def go_tournament_menu(self):
+        self.current_menu = [
+            ("Ajouter un tournoi", self.tournamentcontroller.add_tournament),
+            ("Voir la liste des tournois", self.tournamentcontroller.print_tournaments)
         ]
