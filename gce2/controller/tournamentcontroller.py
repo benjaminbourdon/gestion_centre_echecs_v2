@@ -2,7 +2,7 @@ from gce2.view.tournamentview import TournamentView
 from gce2.manager.tournamentmanager import TournamentManager
 
 
-class TournamentController():
+class TournamentController:
     def __init__(self):
         self.view = TournamentView()
         self.manager = TournamentManager()
@@ -16,7 +16,12 @@ class TournamentController():
         list_tournaments = self.manager.get_tournaments()
         self.view.list_tournaments(list_tournaments)
 
-    def select_tournament(self):
+    def summerize_tournament(self):
         list_tournament = self.manager.get_tournaments()
         selected_tournament = self.view.select_tournament(list_tournament)
         self.view.print_tournament_details(selected_tournament)
+
+    def print_participants(self):
+        list_tournament = self.manager.get_tournaments()
+        selected_tournament = self.view.select_tournament(list_tournament)
+        self.view.print_tournament_participants(selected_tournament)

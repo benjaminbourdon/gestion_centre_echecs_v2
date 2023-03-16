@@ -32,3 +32,14 @@ class TournamentView:
             )
         else:
             raise BaseException
+
+    def print_tournament_participants(self, tournament):
+        if isinstance(tournament, Tournament):
+            if tournament.participants:
+                print(f'Les participants au tournoi "{tournament.name}" :')
+                for participant in tournament.participants:
+                    print(participant)
+            else:
+                print("Ce tournoi n'a pas encore de participant.")
+        else:
+            raise BaseException

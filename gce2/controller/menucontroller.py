@@ -48,5 +48,6 @@ class MenuController:
         self.current_menu = [
             ("Ajouter un tournoi", self.tournamentcontroller.add_tournament),
             ("Voir la liste des tournois", self.tournamentcontroller.print_tournaments),
-            ("Selectionner un tournoi", self.tournamentcontroller.select_tournament)
+            ("Selectionner un tournoi", self.tournamentcontroller.summerize_tournament),
+            ("Afficher les participants d'un tournoi", self.tournamentcontroller.print_participants)
         ]
