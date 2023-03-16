@@ -30,18 +30,7 @@ class MenuController:
             choicies.append(("Retourner au menu principal", self.go_main_menu))
         choicies.append(("Quitter", self.go_quit))
 
-        while True:
-            answer = self.view.ask_choice(choicies)
-
-            try:
-                answer = int(answer)
-                try:
-                    action = choicies[answer][1]
-                    return action
-                except IndexError:
-                    print("Le chiffre indiqué n'est pas valide. Ré-essayer.")
-            except ValueError:
-                print("Vous devez indiquer un numéro. Ré-essayer.")
+        return self.view.ask_menu_choicies(choicies)
 
     def go_quit(self):
         self.quit = True
