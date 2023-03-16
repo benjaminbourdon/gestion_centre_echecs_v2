@@ -14,7 +14,7 @@ class MenuController:
     def main_menu(self):
         return [("Menu Joueur", self.go_player_menu)]
 
-    def main(self):
+    def executate(self):
         while not self.quit:
             action = self.navigate(self.current_menu)
             action()
