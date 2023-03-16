@@ -15,8 +15,8 @@ class MenuController:
     @property
     def main_menu(self):
         return [
-            ("Menu Joueur", self.go_player_menu),
-            ("Menu Tournoi", self.go_tournament_menu),
+            ("Menu Joueur", self.go_players_menu),
+            ("Menu Tournoi", self.go_tournaments_menu),
         ]
 
     def executate(self):
@@ -38,14 +38,15 @@ class MenuController:
     def go_main_menu(self):
         self.current_menu = self.main_menu
 
-    def go_player_menu(self):
+    def go_players_menu(self):
         self.current_menu = [
             ("Ajouter un joueur", self.playercontroller.add_player),
             ("Voir la liste des joueurs", self.playercontroller.print_players),
         ]
 
-    def go_tournament_menu(self):
+    def go_tournaments_menu(self):
         self.current_menu = [
             ("Ajouter un tournoi", self.tournamentcontroller.add_tournament),
-            ("Voir la liste des tournois", self.tournamentcontroller.print_tournaments)
+            ("Voir la liste des tournois", self.tournamentcontroller.print_tournaments),
+            ("Selectionner un tournoi", self.tournamentcontroller.select_tournament)
         ]
