@@ -21,7 +21,7 @@ class TournamentView:
         menuview = MenuView()
         return menuview.ask_choice(
             choicies,
-            msg_intro="Quel tournoi voulez-vous consulter ?",
+            msg_intro="Quel tournoi voulez-vous selectionner ?",
             msg_action="Indiquer le numéro du tournoi souhaité : ",
         )
 

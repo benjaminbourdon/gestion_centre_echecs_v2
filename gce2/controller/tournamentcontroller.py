@@ -25,3 +25,18 @@ class TournamentController:
         list_tournament = self.manager.get_tournaments()
         selected_tournament = self.view.select_tournament(list_tournament)
         self.view.print_tournament_participants(selected_tournament)
+
+    def add_participant(self):
+        list_tournament = self.manager.get_tournaments()
+        selected_tournament = self.view.select_tournament(list_tournament)
+        self.view.print_tournament_participants(selected_tournament)
+
+        from gce2.controller.playercontroller import PlayerController
+
+        PlayerController = PlayerController()
+        selected_player = PlayerController.select_player()
+
+        edited_tournament = self.manager.add_participant_in_tournament(
+            selected_tournament.doc_id, selected_player.federal_id
+        )
+        self.view.print_tournament_participants(edited_tournament)

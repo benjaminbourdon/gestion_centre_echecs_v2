@@ -13,3 +13,6 @@ class PlayerView:
         print("Voici la liste des joueurs enregistrés :")
         for player in player_list:
             print(player)
+
+    def select_player_id(self):
+        return input("Quel est l'identifiant fédéral du joueur ?").strip()
