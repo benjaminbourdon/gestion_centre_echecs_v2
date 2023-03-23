@@ -48,6 +48,29 @@ class PostPlayerCommand(AppCommand):
             return new_player
 
 
+class GetAllTournamentsCommand(AppCommand):
+    def executate(self):
+        return self.app.managers["TournamentManager"].get_tournaments()
+
+
+class GetTournamentCommand(AppCommand):
+    def executate(self):
+        tournament_id = self.app.request["tournament_id"]
+        return self.app.managers["TournamentManager"].get_tournament_by_id(tournament_id)
+
+
+class PostTournamentCommand(AppCommand):
+    def executate(self):
+        data = self.app.request
+        try:
+            new_tournament = self.app.managers["TournamentManager"].post_tournament(data)
+        except Exception:
+            raise Exception
+        else:
+            self.app.alert_msg = "Le tournoi a correctement été ajouté."
+            return new_tournament
+
+
 class CLIAppCommand(AppCommand, ABC):
     def __init__(self, app, **kwargs) -> None:
         if not isinstance(app, cliappmodul.CLIApplication):

@@ -1,6 +1,7 @@
 from abc import ABC
 
 import gce2.controller.commands as commands
+import gce2.exception.exception as exception
 
 
 class Application(ABC):
@@ -15,7 +16,13 @@ class Application(ABC):
     def executeCommand(self, command, request=None, template=None):
         if isinstance(command, commands.Command):
             if request is not None and callable(request):
-                self.request.update(request())
+                try:
+                    data_fromrequest = request()
+                except exception.CancelledActionException:
+                    self.alert_msg = "La saisie a éte annulée."
+                    return
+                else:
+                    self.request.update(data_fromrequest)
             respond = command.executate()
             if hasattr(command, "log") and callable(command.log):
                 command.log()

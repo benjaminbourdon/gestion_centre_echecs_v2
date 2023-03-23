@@ -71,6 +71,25 @@ class CLIApplication(Application):
             text="Ajouter un joueur",
             request=self.view.ask_new_player,
             command=commands.PostPlayerCommand(self),
-            template=self.view.template_resume_player
+            template=self.view.template_resume_player,
+        )
+
+        tournament_menu = main_menu.create_submenu("Menu Tournoi")
+        tournament_menu.add_commands(
+            text="Voir tous les tournois",
+            command=commands.GetAllTournamentsCommand(self),
+            template=self.view.template_list_tournaments,
+        )
+        tournament_menu.add_commands(
+            text="Sélectionner un tournoi",
+            request=self.view.ask_tournament_id,
+            command=commands.GetTournamentCommand(self),
+            template=self.view.template_resume_tournament
+        )
+        tournament_menu.add_commands(
+            text="Ajouter un tournoi",
+            request=self.view.ask_new_tournament,
+            command=commands.PostTournamentCommand(self),
+            template=self.view.template_resume_tournament
         )
         self.transition_to(main_menu)

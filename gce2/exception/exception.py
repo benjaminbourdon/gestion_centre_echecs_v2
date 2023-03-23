@@ -1,0 +1,2 @@
+class CancelledActionException(Exception):
+    pass
