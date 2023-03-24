@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import gce2.application.application as appmodul
 import gce2.application.cliapplication as cliappmodul
 import gce2.application.clicomponents.menu as menumodul
+import gce2.exception.exception as exception
 
 
 class Command(ABC):
@@ -56,14 +57,28 @@ class GetAllTournamentsCommand(AppCommand):
 class GetTournamentCommand(AppCommand):
     def executate(self):
         tournament_id = self.app.request["tournament_id"]
-        return self.app.managers["TournamentManager"].get_tournament_by_id(tournament_id)
+        return self.app.managers["TournamentManager"].get_tournament_by_id(
+            tournament_id
+        )
+
+
+class GetParticipants(AppCommand):
+    def executate(self):
+        tournament_id = self.app.request["tournament_id"]
+        return (
+            self.app.managers["TournamentManager"]
+            .get_tournament_by_id(tournament_id)
+            .participants
+        )
 
 
 class PostTournamentCommand(AppCommand):
     def executate(self):
         data = self.app.request
         try:
-            new_tournament = self.app.managers["TournamentManager"].post_tournament(data)
+            new_tournament = self.app.managers["TournamentManager"].post_tournament(
+                data
+            )
         except Exception:
             raise Exception
         else:
@@ -87,6 +102,25 @@ class MofifyMenuCommand(CLIAppCommand):
     def executate(self):
         if hasattr(self, "menu"):
             self.app.transition_to(self.menu)
+
+
+class LaunchDynamicMenuCommand(CLIAppCommand):
+    def __init__(self, class_menu, **kwargs) -> None:
+        from gce2.application.clicomponents.dynamicmenu import DynamicMenu
+
+        if issubclass(class_menu, DynamicMenu):
+            self.class_menu = class_menu
+        super().__init__(**kwargs)
+
+    def executate(self):
+        try:
+            dynamic_menu = self.class_menu(
+                app=self.app, name="Menu dynamique", upper_menu=self.app.menu
+            )
+        except exception.NotInstanciatedMenuException:
+            self.app.alert_msg = "Le menu n'a pas pu être instancié."
+        else:
+            self.app.transition_to(dynamic_menu)
 
 
 class QuitCommand(CLIAppCommand):

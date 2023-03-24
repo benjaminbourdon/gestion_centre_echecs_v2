@@ -1,5 +1,6 @@
 from gce2.application.application import Application
 from gce2.application.clicomponents.menu import Menu
+from gce2.application.clicomponents.tournamentdynamicmenu import TournamentDynamicMenu
 import gce2.controller.commands as commands
 
 
@@ -80,16 +81,20 @@ class CLIApplication(Application):
             command=commands.GetAllTournamentsCommand(self),
             template=self.view.template_list_tournaments,
         )
-        tournament_menu.add_commands(
-            text="Sélectionner un tournoi",
-            request=self.view.ask_tournament_id,
-            command=commands.GetTournamentCommand(self),
-            template=self.view.template_resume_tournament
-        )
+        # tournament_menu.add_commands(
+        #     text="Sélectionner un tournoi",
+        #     request=self.view.ask_tournament_id,
+        #     command=commands.GetTournamentCommand(self),
+        #     template=self.view.template_resume_tournament,
+        # )
         tournament_menu.add_commands(
             text="Ajouter un tournoi",
             request=self.view.ask_new_tournament,
             command=commands.PostTournamentCommand(self),
-            template=self.view.template_resume_tournament
+            template=self.view.template_resume_tournament,
+        )
+        tournament_menu.add_commands(
+            text="Sélectionner un tournoi",
+            command=commands.LaunchDynamicMenuCommand(class_menu=TournamentDynamicMenu, app=self)
         )
         self.transition_to(main_menu)

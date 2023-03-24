@@ -1,7 +1,10 @@
 import gce2.exception.exception as exception
+from gce2.utils import _is_int
 
 
 class CliView:
+
+    NB_MAXTRY = 3
 
     FIELD_NAMES = {
         "lastname": "nom de famille",
@@ -62,7 +65,10 @@ class CliView:
             return "Aucun tournoi ne correspond à votre demande."
 
     def ask_tournament_id(self):
-        return self._ask_info(list_field=["tournament_id"])
+        return self._ask_info(
+            list_field=["tournament_id"],
+            text_intro="Quel tournoi voulez-vous sélectionner ?",
+        )
 
     def template_resume_tournament(self, tournament):
         if tournament is not None:
@@ -81,7 +87,7 @@ class CliView:
         self.clear()
         if text_intro is not None:
             print(text_intro)
-            print(f'(Taper "{self.CANCEL_WORLD}" à tout moment pour annuler la saisie)')
+        print(f'(Taper "{self.CANCEL_WORLD}" à tout moment pour annuler la saisie)')
         data = {}
         for field in list_field:
             if field in self.FIELD_NAMES:
@@ -94,3 +100,33 @@ class CliView:
             else:
                 data[field] = answer
         return data
+
+    def select_info(self, dict_choicies, text_intro=None):
+        self.clear()
+        if text_intro is not None:
+            print(text_intro)
+        print(f'(Taper "{self.CANCEL_WORLD}" à tout moment pour annuler la saisie)')
+        for key, values in dict_choicies.items():
+            print(f"[{key}]\t{values}")
+
+        for nb_try in range(self.NB_MAXTRY):
+            if nb_try > 0:
+                print(
+                    f"Saisie incorrecte. {nb_try+1}e essai ({self.NB_MAXTRY} essais maximum)"
+                )
+            answer = input("Votre choix (sensible à la case) : ").strip()
+            if answer == self.CANCEL_WORLD:
+                raise exception.CancelledActionException
+            if answer in dict_choicies.keys():
+                return answer
+            if _is_int(answer) and int(answer) in dict_choicies.keys():
+                return int(answer)
+        return None
+
+    def template_list_participants(self, list_participants):
+        if len(list_participants) > 0:
+            lines = ["Les participants au tournoi sont :"]
+            lines.extend([str(participant) for participant in list_participants])
+            return "\n".join(lines)
+        else:
+            return "Ce tournoi n'a pas encore de participants."
