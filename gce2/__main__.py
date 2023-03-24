@@ -1,5 +1,15 @@
-from gce2.controller.menucontroller import MenuController
+from gce2.application.cliapplication import CLIApplication
+from gce2.manager.playermanager import PlayerManager
+from gce2.manager.tournamentmanager import TournamentManager
+from gce2.view.cliview import CliView
 
 
-menu = MenuController()
-menu.executate()
+app = CLIApplication(
+    view=CliView(),
+    managers={
+        "PlayerManager": PlayerManager(),
+        "TournamentManager": TournamentManager(),
+    },
+)
+
+app.run()

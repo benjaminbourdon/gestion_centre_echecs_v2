@@ -123,7 +123,9 @@ class CliView:
                 return int(answer)
         return None
 
-    def template_list_participants(self, list_participants):
+    def template_list_participants(self, tournament):
+        list_participants = tournament.participants
+
         if len(list_participants) > 0:
             lines = ["Les participants au tournoi sont :"]
             lines.extend([str(participant) for participant in list_participants])

@@ -72,13 +72,28 @@ class GetParticipants(AppCommand):
         )
 
 
+class AddParticipant(AppCommand):
+    def executate(self):
+        tournament_id = self.app.request["tournament_id"]
+        participant_id = self.app.request["federal_id"]
+        manager = self.app.managers["TournamentManager"]
+        try:
+            updated_tournament = manager.add_participant_in_tournament(
+                tournament_id, participant_id
+            )
+        except Exception:
+            raise Exception
+        else:
+            self.app.alert_msg = "Le participant a correctement éte ajouté."
+            return updated_tournament
+
+
 class PostTournamentCommand(AppCommand):
     def executate(self):
         data = self.app.request
+        manager = self.app.managers["TournamentManager"]
         try:
-            new_tournament = self.app.managers["TournamentManager"].post_tournament(
-                data
-            )
+            new_tournament = manager.post_tournament(data)
         except Exception:
             raise Exception
         else:
