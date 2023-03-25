@@ -1,8 +1,10 @@
-from tinydb import operations
+# from tinydb import operations
 
 from gce2 import database
+
 # from gce2.model.round import Round
 from gce2.model.tournament import Tournament
+
 # from gce2 import config
 
 
@@ -31,7 +33,8 @@ class TournamentManager:
                     tournament_data | {"doc_id": tournament_data.doc_id}
                 )
             else:
-                print(f"Aucun tournoi ne correspond à la recherche doc_id={doc_id}.")
+                raise Exception
+                # print(f"Aucun tournoi ne correspond à la recherche doc_id={doc_id}.")
 
     # def add_round_in_tournament(self, id_tournament, round_data):
     #     round = Round.deserialize(round_data)
@@ -47,9 +50,15 @@ class TournamentManager:
     #     return tournament
 
     def add_participant_in_tournament(self, id_tournament, id_participant):
+        def add_unique(field, element):
+            def transform(doc):
+                if element not in doc[field]:
+                    doc[field].append(element)
+
+            return transform
+
         with database.get_connexion_tournament() as json_file:
             json_file.update(
-                operations.add("participants", [id_participant]),
-                doc_ids=[id_tournament],
+                add_unique("participants", id_participant), doc_ids=[id_tournament]
             )
         return self.get_tournament_by_id(id_tournament)
