@@ -132,3 +132,17 @@ class CliView:
             return "\n".join(lines)
         else:
             return "Ce tournoi n'a pas encore de participants."
+
+    def ask_confirmation(self, text="Êtes-vous sûr ?"):
+        answer = input(text + "(O / n)").strip()
+        if answer in ["", "O"]:
+            return None
+        else:
+            raise exception.CancelledActionException
+
+    def template_last_round(self, tournament):
+        last_round = tournament.last_round
+
+        print(
+            f"{last_round.name} (tour {len(tournament.rounds)} sur {tournament.max_round})"
+        )

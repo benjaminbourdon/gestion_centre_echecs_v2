@@ -4,3 +4,7 @@ class CancelledActionException(Exception):
 
 class NotInstanciatedMenuException(Exception):
     pass
+
+
+class InsertRoundException(Exception):
+    pass

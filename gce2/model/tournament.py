@@ -3,6 +3,7 @@ from gce2.model.round import Round
 from gce2.model.player import Player
 import gce2.manager.roundmanager as rm
 import gce2.manager.playermanager as pm
+import gce2.exception.exception as e
 
 
 class Tournament:
@@ -58,6 +59,11 @@ class Tournament:
             f"{self.name} ({self.description}) à {self.place} du {self.start_date} au {self.end_date}."
             f"Tournoi en {self.max_round} tours."
         )
+
+    def is_started(self):
+        if len(self.rounds) > 0:
+            return True
+        return False
 
     @property
     def core_dict(self):
@@ -117,11 +123,11 @@ class Tournament:
 
     def add_round(self, round):
         if not (isinstance(round, Round)):
-            raise BaseException
+            raise e.InsertRoundException
         if self.nb_rounds > self.max_round:
-            raise BaseException
+            raise e.InsertRoundException
         if self.nb_rounds > 0 and not (self.last_round.iscompleted()):
-            raise BaseException
+            raise e.InsertRoundException
         self.rounds.append(round)
 
     def add_participant(self, participant):

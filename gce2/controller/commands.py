@@ -101,6 +101,28 @@ class PostTournamentCommand(AppCommand):
             return new_tournament
 
 
+class StartTournamentCommand(AppCommand):
+    def executate(self):
+        tournament_id = self.app.request["tournament_id"]
+        manager = self.app.managers["TournamentManager"]
+        tournament = manager.get_tournament_by_id(tournament_id)
+        if not tournament.is_started() and len(tournament.participants) > 0:
+            from datetime import date
+
+            date_today = date.today().strftime("%d/%m/%y")
+            data_firstround = {"name": "Tour 1", "start_datetime": date_today}
+            try:
+                updated_tournament = manager.add_round_in_tournament(
+                    tournament_id, data_firstround
+                )
+            except exception.InsertRoundException:
+                self.app.alert_msg = "Le premier tour n'a pas pu être crée."
+                return None
+            else:
+                self.app.alert_msg = "Le tournoi a correctement été lancé."
+                return updated_tournament
+
+
 class CLIAppCommand(AppCommand, ABC):
     def __init__(self, app, **kwargs) -> None:
         if not isinstance(app, cliappmodul.CLIApplication):
