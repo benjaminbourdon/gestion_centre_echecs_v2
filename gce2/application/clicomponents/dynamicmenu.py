@@ -12,14 +12,14 @@ class DynamicMenu(Menu, ABC):
         selected_object = self._select_linked_object()
 
         if selected_object is not None:
-            self._linked_object = selected_object
+            self._get_object_method, self._object_id = selected_object
             self._construct_dynamic_menu()
         else:
             raise NotInstanciatedMenuException
 
     @property
     def linked_object(self):
-        return self._linked_object
+        return self._get_object_method(self._object_id)
 
     @property
     def menuitems(self):
