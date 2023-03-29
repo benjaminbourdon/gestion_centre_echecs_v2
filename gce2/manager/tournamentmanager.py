@@ -21,6 +21,11 @@ class TournamentManager:
             new_tournament.doc_id = doc_id
         return new_tournament
 
+    def update_rounds(self, tournament):
+        with database.get_connexion_tournament() as json_file:
+            tournament_id = tournament.doc_id
+            json_file.update({"rounds": tournament.serialize_rounds()}, doc_ids=[tournament_id])
+
     def get_tournament_by_id(self, doc_id: int):
         with database.get_connexion_tournament() as json_file:
             tournament_data = json_file.get(doc_id=doc_id)
@@ -43,13 +48,10 @@ class TournamentManager:
             except InsertRoundException:
                 raise InsertRoundException
             else:
-                with database.get_connexion_rounds() as json_file:
-                    id_round = json_file.insert(round.serialize())
                 with database.get_connexion_tournament() as json_file:
                     json_file.update(
-                        self._add_unique("rounds", id_round), doc_ids=[id_tournament]
+                        self._add_unique("rounds", tournament.last_round.serialize()), doc_ids=[id_tournament]
                     )
-                tournament.last_round.doc_id = id_round
                 return tournament
 
     def add_participant_in_tournament(self, id_tournament, id_participant):

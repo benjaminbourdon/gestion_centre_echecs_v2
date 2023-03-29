@@ -108,19 +108,44 @@ class StartTournamentCommand(AppCommand):
         tournament = manager.get_tournament_by_id(tournament_id)
         if not tournament.is_started() and len(tournament.participants) > 0:
             from datetime import date
+            from gce2.model.round import Round
 
             date_today = date.today().strftime("%d/%m/%y")
-            data_firstround = {"name": "Tour 1", "start_datetime": date_today}
+            first_round = Round(
+                {
+                    "name": "Tour 1",
+                    "start_datetime": date_today,
+                    "games": tournament.generate_random_games(),
+                }
+            )
             try:
-                updated_tournament = manager.add_round_in_tournament(
-                    tournament_id, data_firstround
-                )
+                tournament.add_round(first_round)
+                manager.update_rounds(tournament)
             except exception.InsertRoundException:
                 self.app.alert_msg = "Le premier tour n'a pas pu être crée."
                 return None
             else:
                 self.app.alert_msg = "Le tournoi a correctement été lancé."
-                return updated_tournament
+                return tournament
+
+
+class GetRoundCommand(AppCommand):
+    def executate(self):
+        manager = self.app.managers["TournamentManager"]
+        tournament_id = self.app.request["tournament_id"]
+        round_id = self.app.request["round_id"]
+
+        tournament = manager.get_tournament_by_id(tournament_id)
+        round = tournament.rounds[round_id]
+        return round
+
+
+# class PostGameResultCommand(AppCommand):
+#     def executate(self):
+#         manager = self.app.managers["TournamentManager"]
+#         tournament_id = self.app.request["tournament_id"]
+#         round_id = self.app.request["round_id"]
+#         game_result = self.app.request["game_result"]
 
 
 class CLIAppCommand(AppCommand, ABC):

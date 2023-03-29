@@ -1,5 +1,6 @@
 import gce2.exception.exception as exception
 from gce2.utils import _is_int
+import gce2.config as c
 
 
 class CliView:
@@ -56,7 +57,7 @@ class CliView:
             lines = ["Voici la liste des tournois demandés :"]
             lines.extend(
                 [
-                    f"[{tournament.doc_id}] {tournament}"
+                    f"({tournament.doc_id}) {tournament}"
                     for tournament in tournaments_list
                 ]
             )
@@ -142,7 +143,46 @@ class CliView:
 
     def template_last_round(self, tournament):
         last_round = tournament.last_round
+        return f"{last_round.name} (tour {len(tournament.rounds)} sur {tournament.max_round})"
 
-        print(
-            f"{last_round.name} (tour {len(tournament.rounds)} sur {tournament.max_round})"
-        )
+    def template_list_rounds(self, tournament):
+        if tournament.nb_rounds == 0:
+            return "Ce tournoi n'a pas encore de tour enregistré."
+
+        rounds = tournament.rounds
+        lines = [f"Liste des tours :\n(Tournoi en {tournament.max_round} tours)"]
+        for round in rounds:
+            if round.iscompleted():
+                statut = "fini"
+            else:
+                statut = "en cours"
+            lines.append(f"> {round.name} ({statut})")
+        return "\n".join(lines)
+
+    def template_resume_round(self, round):
+        if round.iscompleted():
+            intro = f"{round.name} (fini) s'est déroulé du {round.start_datetime} au {round.end_datetime}"
+        else:
+            intro = f"{round.name} (en cours) a débuté le {round.start_datetime}"
+
+        participants_name = {
+            participant.federal_id: participant.fullname
+            for participant in round.tournament.participants
+        }
+        result = []
+        for game in round.games:
+            player1 = participants_name[game[0][0]]
+            player2 = participants_name[game[1][0]]
+            text = f" {player1:_<30} contre {player2:_>30}\t:\t"
+
+            if game[0][1] == c.SCORE["WIN"] and game[1][1] == c.SCORE["LOSE"]:
+                text += f"{player1} a gagné"
+            elif game[0][1] == c.SCORE["LOSE"] and game[1][1] == c.SCORE["WIN"]:
+                text += f"{player2} a gagné"
+            elif game[0][1] == c.SCORE["TIE"] and game[1][1] == c.SCORE["TIE"]:
+                text += "égalité"
+            else:
+                text += "résultat non connu"
+            result.append(text)
+
+        return intro + "\n" + "\n".join(result)

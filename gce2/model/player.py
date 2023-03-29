@@ -30,3 +30,7 @@ class Player:
     @property
     def doc_id(self):
         return self.federalid_to_int(self.federal_id)
+
+    @property
+    def fullname(self):
+        return f"{self.firstname} {self.lastname}"

@@ -1,9 +1,11 @@
+import random
 from pprint import pformat
-from gce2.model.round import Round
-from gce2.model.player import Player
-import gce2.manager.roundmanager as rm
-import gce2.manager.playermanager as pm
+
+import gce2.config as config
 import gce2.exception.exception as e
+import gce2.manager.playermanager as pm
+import gce2.model.player as p
+import gce2.model.round as r
 
 
 class Tournament:
@@ -60,6 +62,13 @@ class Tournament:
             f"Tournoi en {self.max_round} tours."
         )
 
+    def can_start(self):
+        nb_participants = len(self.participants)
+        if nb_participants > 0 and nb_participants % 2 == 0:
+            return True
+        else:
+            return False
+
     def is_started(self):
         if len(self.rounds) > 0:
             return True
@@ -75,7 +84,7 @@ class Tournament:
         return (
             {"doc_id": self.doc_id}
             | self.core_dict
-            | {"rounds": [round.name for round in self.rounds]}
+            | {"rounds": [round.serialize() for round in self.rounds]}
             | {
                 "participants": [
                     participant.doc_id for participant in self.participants
@@ -84,11 +93,14 @@ class Tournament:
         )
 
     def serialize(self) -> dict:
-        round_list = [round.doc_id for round in self.rounds if round.doc_id is not None]
+        round_list = self.serialize_rounds()
         participant_list = [participant.doc_id for participant in self.participants]
         return (
             self.core_dict | {"rounds": round_list} | {"participants": participant_list}
         )
+
+    def serialize_rounds(self) -> list:
+        return [round.serialize() for round in self.rounds]
 
     @classmethod
     def deserialize(cls, data: dict) -> object:
@@ -99,9 +111,8 @@ class Tournament:
             initializing_data["doc_id"] = int(data["doc_id"])
         tournament = cls(**initializing_data)
         if "rounds" in data:
-            round_manager = rm.RoundManager()
-            for round_id in data["rounds"]:
-                round = round_manager.get_round_by_id(round_id)
+            for round_data in data["rounds"]:
+                round = r.Round.deserialize(round_data)
                 tournament.add_round(round)
         if "participants" in data:
             player_manager = pm.PlayerManager()
@@ -122,14 +133,31 @@ class Tournament:
         return None
 
     def add_round(self, round):
-        if not (isinstance(round, Round)):
+        if not (isinstance(round, r.Round)):
             raise e.InsertRoundException
         if self.nb_rounds > self.max_round:
             raise e.InsertRoundException
         if self.nb_rounds > 0 and not (self.last_round.iscompleted()):
             raise e.InsertRoundException
+
+        round.tournament = self
         self.rounds.append(round)
 
     def add_participant(self, participant):
-        if isinstance(participant, Player):
+        if isinstance(participant, p.Player):
             self.participants.append(participant)
+
+    def generate_random_games(self):
+        nb_participants = len(self.participants)
+
+        list_games = []
+        order = list(range(nb_participants))
+        random.shuffle(order)
+        for i in range(nb_participants // 2):
+            list_games.append(
+                (
+                    [self.participants[order[2 * i]].federal_id, config.SCORE["UNKNOW"]],
+                    [self.participants[order[2 * i + 1]].federal_id, config.SCORE["UNKNOW"]],
+                )
+            )
+        return list_games

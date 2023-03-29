@@ -37,21 +37,41 @@ class TournamentDynamicMenu(DynamicMenu):
             command=commands.GetTournamentCommand(self.app),
             template=self.app.view.template_list_participants,
         )
+
         if tournament.is_started():
-            pass
+            self.add_commands(
+                text="Voir la liste des tours",
+                request=self.request_tournament_id,
+                command=commands.GetTournamentCommand(self.app),
+                template=self.app.view.template_list_rounds,
+            )
+            self.add_commands(
+                text="Voir le détail d'un tour",
+                request=self.request_round_id,
+                command=commands.GetRoundCommand(self.app),
+                template=self.app.view.template_resume_round,
+            )
         else:
-            self.add_commands(
-                text="Ajouter un participant",
-                request=self.request_participant_id,
-                command=commands.AddParticipant(self.app),
-                template=self.app.view.template_list_participants,
-            )
-            self.add_commands(
-                text="Commencer le tournoi",
-                request=self.confirm_request_tournament_id,
-                command=commands.StartTournamentCommand(self.app),
-                template=self.app.view.template_last_round,
-            )
+            if tournament.can_start():
+                self.add_commands(
+                    text="Ajouter un participant",
+                    request=self.request_participant_id,
+                    command=commands.AddParticipant(self.app),
+                    template=self.app.view.template_list_participants,
+                )
+                self.add_commands(
+                    text="Commencer le tournoi",
+                    request=self.confirm_request_tournament_id,
+                    command=commands.StartTournamentCommand(self.app),
+                    template=self.app.view.template_last_round,
+                )
+            else:
+                self.add_commands(
+                    text="Ajouter un participant (un tournoi doit avoir un nombre pair de participants pour débuter)",
+                    request=self.request_participant_id,
+                    command=commands.AddParticipant(self.app),
+                    template=self.app.view.template_list_participants,
+                )
 
     def request_tournament_id(self):
         return {"tournament_id": self.linked_object.doc_id}
@@ -79,3 +99,12 @@ class TournamentDynamicMenu(DynamicMenu):
             list_choicies, "Joueurs ne participant pas encore :"
         )
         return {"tournament_id": self.linked_object.doc_id, "federal_id": federal_id}
+
+    def request_round_id(self):
+        tournament = self.linked_object
+        list_rounds = tournament.rounds
+        list_choicies = {i + 1: round.name for i, round in enumerate(list_rounds)}
+        round_id = (
+            self.app.view.select_info(list_choicies, "Tours finis ou entamés :") - 1
+        )
+        return {"tournament_id": self.linked_object.doc_id, "round_id": round_id}
