@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import gce2.application.application as appmodul
 import gce2.application.cliapplication as cliappmodul
 import gce2.application.clicomponents.menu as menumodul
-import gce2.exception.exception as exception
+import gce2.exception.exception as e
 
 
 class Command(ABC):
@@ -121,7 +121,7 @@ class StartTournamentCommand(AppCommand):
             try:
                 tournament.add_round(first_round)
                 manager.update_rounds(tournament)
-            except exception.InsertRoundException:
+            except e.InsertRoundException:
                 self.app.alert_msg = "Le premier tour n'a pas pu être crée."
                 return None
             else:
@@ -179,7 +179,7 @@ class LaunchDynamicMenuCommand(CLIAppCommand):
             dynamic_menu = self.class_menu(
                 app=self.app, name="Menu dynamique", upper_menu=self.app.menu
             )
-        except exception.NotInstanciatedMenuException:
+        except e.NotInstanciatedMenuException:
             self.app.alert_msg = "Le menu n'a pas pu être instancié."
         else:
             self.app.transition_to(dynamic_menu)

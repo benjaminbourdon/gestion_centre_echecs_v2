@@ -1,108 +1,124 @@
-import gce2.exception.exception as exception
-from gce2.utils import _is_int
+from typing import Self, List, Dict
+
+import gce2.application.clicomponents.menu as m
+import gce2.model.player as p
 import gce2.config as c
+import gce2.exception.exception as e
+import gce2.model.tournament as t
+import gce2.model.round as r
+from gce2.utils import _is_int
 
 
 class CliView:
+    """Contains specific methods for CLI interraction : prints and requests
+
+    Raises:
+        CancelledActionException: raise when user stopped an input data request
+    """
 
     NB_MAXTRY = 3
 
-    FIELD_NAMES = {
+    FIELD_DESCRIPTION = {
         "lastname": "nom de famille",
         "firstname": "prénom",
         "federal_id": "numéro fédéral",
-        "birthday": "date de naissance",
+        "birthday": "date de naissance (JJ/MM/AAAA)",
         "tournament_id": "identifiant du tournoi",
         "name": "nom",
         "description": "description",
         "place": "lieu",
-        "start_date": "date de début",
-        "end_date": "date de fin",
+        "start_date": "date de début (JJ/MM/AAAA)",
+        "end_date": "date de fin (JJ/MM/AAAA)",
         "max_round": "nombre de tour maximum",
     }
 
     CANCEL_WORLD = "!"
 
-    def clear(self):
+    """
+    Generic methods
+    """
+
+    def clear(self: Self) -> None:
+        """Create blank lines to clear terminal screen"""
         print("\n" * 40)
 
-    def separate(self):
+    def separate(self: Self) -> None:
+        """Create a line to separate horizontaly"""
         print("___________________________")
 
-    def ask_menu_choice(self, menu):
+    """
+    Ask methods, return request as dict
+    """
+
+    def ask_menu_choice(self: Self, menu: m.Menu) -> None:
+        """Print menu and ask to choice an item from it
+
+        Args:
+            menu (Menu): navigated Menu object
+        """
         print(menu)
         print("Votre choix : ", end="")
         return input().strip()
 
-    def template_list_players(self, player_list):
-        lines = ["Voici la liste des joueurs enregistrés :"]
-        lines.extend([str(player) for player in player_list])
-        return "\n".join(lines)
+    def _ask_info(
+        self: Self,
+        list_field: List[str],
+        text_intro: str = None,
+        dict_default: Dict[str, str] = None,
+    ) -> Dict[str, str]:
+        """Generic method wich ask string data for a list of fields, one by one
 
-    def ask_player_id(self):
-        return self._ask_info(list_field=["federal_id"])
+        Args:
+            list_field (List[str]): list of fields by name, use as key in return
+            text_intro (str, optional): string print at first. Defaults to None.
+            dict_default (Dict[str, str]): dict of default values for fiel item. Defaults to None.
 
-    def template_resume_player(self, player):
-        return f"Détail du joueur :\n{str(player)}"
+        Raises:
+            CancelledActionException: raise when user stopped its own request
 
-    def ask_new_player(self):
-        from gce2.model.player import Player
-
-        return self._ask_info(
-            Player.__slots__, "Merci de renseigner les informations suivantes"
-        )
-
-    def template_list_tournaments(self, tournaments_list):
-        if tournaments_list is not None:
-            lines = ["Voici la liste des tournois demandés :"]
-            lines.extend(
-                [
-                    f"({tournament.doc_id}) {tournament}"
-                    for tournament in tournaments_list
-                ]
-            )
-            return "\n".join(lines)
-        else:
-            return "Aucun tournoi ne correspond à votre demande."
-
-    def ask_tournament_id(self):
-        return self._ask_info(
-            list_field=["tournament_id"],
-            text_intro="Quel tournoi voulez-vous sélectionner ?",
-        )
-
-    def template_resume_tournament(self, tournament):
-        if tournament is not None:
-            return f"Le tournoi {tournament.name} se déroule du {tournament.start_date} au {tournament.end_date}"
-        else:
-            return "Aucun tournoi ne correspond à votre demande"
-
-    def ask_new_tournament(self):
-        from gce2.model.tournament import Tournament
-
-        return self._ask_info(
-            Tournament.CORE_ATTRIBUTES, "Merci de renseigner les informations suivantes"
-        )
-
-    def _ask_info(self, list_field, text_intro=None):
+        Returns:
+            Dict[str, str]: field names as key and user inputs as values
+        """
         self.clear()
         if text_intro is not None:
             print(text_intro)
         print(f'(Taper "{self.CANCEL_WORLD}" à tout moment pour annuler la saisie)')
+
         data = {}
         for field in list_field:
-            if field in self.FIELD_NAMES:
-                text = self.FIELD_NAMES[field].capitalize()
+            if field in self.FIELD_DESCRIPTION:
+                text = self.FIELD_DESCRIPTION[field].capitalize()
             else:
                 text = field.capitalize()
+            if field in dict_default:
+                text += f' ("{dict_default[field]}" par défaut)'
+
             answer = input(f"{text} > ").strip()
             if answer == self.CANCEL_WORLD:
-                raise exception.CancelledActionException
+                raise e.CancelledActionException
+            elif answer == "":
+                data[field] = dict_default[field]
             else:
                 data[field] = answer
         return data
 
-    def select_info(self, dict_choicies, text_intro=None):
+    def select_info(
+        self: Self, dict_choicies: Dict[str | int, str], text_intro: str = None
+    ) -> str | int | None:
+        """Ask user to chose one valuem, by key values, among a list of possibilites
+
+        Args:
+            dict_choicies (Dict[str  |  int, str]): key among wich user have to chose
+            and corresponding description as value.
+            text_intro (str, optional): string print at first. Defaults to None.
+
+        Raises:
+            CancelledActionException: raise when user stopped its own request
+
+        Returns:
+            str | int | None: return string or integet key choose, same type as in dict_choicies argument.
+            None if no valid answer after NB_MAXTRY tries.
+        """
         self.clear()
         if text_intro is not None:
             print(text_intro)
@@ -117,14 +133,108 @@ class CliView:
                 )
             answer = input("Votre choix (sensible à la case) : ").strip()
             if answer == self.CANCEL_WORLD:
-                raise exception.CancelledActionException
+                raise e.CancelledActionException
             if answer in dict_choicies.keys():
                 return answer
             if _is_int(answer) and int(answer) in dict_choicies.keys():
                 return int(answer)
         return None
 
-    def template_list_participants(self, tournament):
+    def ask_confirmation(self: Self, text: str = "Êtes-vous sûr ?") -> None:
+        """Ask a confirmation, raise an exception if user doesn't
+
+        Args:
+            text (str, optional): text print to ask confirmation. Defaults to "Êtes-vous sûr ?".
+
+        Raises:
+            CancelledActionException: raise if user doesn't confirm
+        """
+        answer = input(text + "(O / n)").strip()
+        if answer in ["", "O"]:
+            return None
+        else:
+            raise e.CancelledActionException
+
+    # def ask_tournament_id(self: Self) -> Dict[str, str]:
+    #     return self._ask_info(
+    #         list_field=["tournament_id"],
+    #         text_intro="Quel tournoi voulez-vous sélectionner ?",
+    #     )
+
+    def ask_new_tournament(self: Self) -> Dict[str, str]:
+        """Ask user needed information to create a new tournament.
+
+        Returns:
+            Dict[str, str]: return dict with tournament core attributes
+            as keys and user answer as values (or default for "max_round")
+        """
+        return self._ask_info(
+            list_field=t.Tournament.CORE_ATTRIBUTES,
+            text_intro="Merci de renseigner les informations suivantes",
+            dict_default={"max_round": c.DEFAULT_NBROUND},
+        )
+
+    def ask_new_player(self: Self) -> Dict[str, str]:
+        """Ask user needed information to create a new player.
+
+        Returns:
+            Dict[str, str]: return dict with player core attributes
+            as keys and user answer as values.
+        """
+        return self._ask_info(
+            p.Player.__slots__, "Merci de renseigner les informations suivantes"
+        )
+
+    def ask_player_id(self: Self) -> Dict[str, str]:
+        """Ask a player federal id.
+
+        Returns:
+            Dict[str, str]: return dict with "federal_id" as key and user answer as value.
+        """
+        return self._ask_info(list_field=["federal_id"])
+
+    """
+    Templates
+    """
+
+    def template_list_players(self: Self, player_list: List[p.Player]) -> str:
+        lines = ["Voici la liste des joueurs enregistrés :"]
+        lines.extend([str(player) for player in player_list])
+        return "\n".join(lines)
+
+    def template_resume_player(self: Self, player: p.Player) -> str:
+        text = ["Détail du joueur :"]
+        for field in p.Player.__slots__:
+            if field in self.FIELD_DESCRIPTION:
+                field_name = self.FIELD_DESCRIPTION[field].capitalize()
+            else:
+                field_name = field.capitalize()
+            field_value = getattr(player, field)
+            text.append(f"{field_name:<20} :\t{field_value}")
+        return "\n".join(text)
+
+    def template_list_tournaments(
+        self: Self, tournaments_list: List[t.Tournament]
+    ) -> str:
+        if tournaments_list is not None:
+            lines = ["Voici la liste des tournois demandés :"]
+            lines.extend(
+                [
+                    f"({tournament.doc_id:^3}) {tournament}"
+                    for tournament in tournaments_list
+                ]
+            )
+            return "\n".join(lines)
+        else:
+            return "Aucun tournoi ne correspond à votre demande."
+
+    def template_resume_tournament(self: Self, tournament: t.Tournament) -> str:
+        if tournament is not None:
+            return f"Le tournoi {tournament.name} se déroule du {tournament.start_date} au {tournament.end_date}"
+        else:
+            return "Aucun tournoi ne correspond à votre demande"
+
+    def template_list_participants(self: Self, tournament: t.Tournament) -> str:
         list_participants = tournament.participants
 
         if len(list_participants) > 0:
@@ -134,18 +244,14 @@ class CliView:
         else:
             return "Ce tournoi n'a pas encore de participants."
 
-    def ask_confirmation(self, text="Êtes-vous sûr ?"):
-        answer = input(text + "(O / n)").strip()
-        if answer in ["", "O"]:
-            return None
+    def template_last_round(self: Self, tournament: t.Tournament) -> str:
+        if tournament.nb_rounds == 0:
+            return "Ce tournoi n'a pas encore de tour enregistré."
         else:
-            raise exception.CancelledActionException
+            last_round = tournament.last_round
+            return f"{last_round.name} (tour {tournament.nb_rounds} sur {tournament.max_round})"
 
-    def template_last_round(self, tournament):
-        last_round = tournament.last_round
-        return f"{last_round.name} (tour {len(tournament.rounds)} sur {tournament.max_round})"
-
-    def template_list_rounds(self, tournament):
+    def template_list_rounds(self: Self, tournament: t.Tournament) -> str:
         if tournament.nb_rounds == 0:
             return "Ce tournoi n'a pas encore de tour enregistré."
 
@@ -159,7 +265,7 @@ class CliView:
             lines.append(f"> {round.name} ({statut})")
         return "\n".join(lines)
 
-    def template_resume_round(self, round):
+    def template_resume_round(self: Self, round: r.Round) -> str:
         if round.iscompleted():
             intro = f"{round.name} (fini) s'est déroulé du {round.start_datetime} au {round.end_datetime}"
         else:

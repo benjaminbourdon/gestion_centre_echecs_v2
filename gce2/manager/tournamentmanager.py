@@ -14,8 +14,8 @@ class TournamentManager:
                 for tournament_data in json_file.all()
             ]
 
-    def post_tournament(self, core_data):
-        new_tournament = Tournament.deserialize(core_data)
+    def post_tournament(self, data):
+        new_tournament = Tournament.deserialize(data)
         with database.get_connexion_tournament() as json_file:
             doc_id = json_file.insert(new_tournament.serialize())
             new_tournament.doc_id = doc_id

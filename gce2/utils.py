@@ -1,4 +1,8 @@
-def _is_str(object):
+from typing import Any
+
+
+def _is_str(object: Any) -> bool:
+    """Verify if object can be transform to string"""
     try:
         str(object)
     except Exception:
@@ -7,7 +11,8 @@ def _is_str(object):
         return True
 
 
-def _is_int(object):
+def _is_int(object: Any) -> bool:
+    """Verify if object can be transform to integer"""
     try:
         int(object)
     except Exception:

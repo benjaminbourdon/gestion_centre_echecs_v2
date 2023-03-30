@@ -1,5 +1,6 @@
 import random
 from pprint import pformat
+from typing import Self, List
 
 import gce2.config as config
 import gce2.exception.exception as e
@@ -20,16 +21,16 @@ class Tournament:
     )
 
     def __init__(
-        self,
-        name,
-        description,
-        place,
-        max_round,
-        start_date,
-        end_date,
-        rounds=None,
-        doc_id=None,
-        participants=None,
+        self: Self,
+        name: str,
+        description: str,
+        place: str,
+        max_round: int | str,
+        start_date: str = None,
+        end_date: str = None,
+        rounds: List[r.Round] = None,
+        doc_id: int = None,
+        participants: List[p.Player] = None,
     ) -> None:
 
         self.name = name
@@ -105,7 +106,9 @@ class Tournament:
     @classmethod
     def deserialize(cls, data: dict) -> object:
         initializing_data = {
-            attribute: data[attribute] for attribute in cls.CORE_ATTRIBUTES
+            attribute: data[attribute]
+            for attribute in cls.CORE_ATTRIBUTES
+            if attribute in data
         }
         if "doc_id" in data:
             initializing_data["doc_id"] = int(data["doc_id"])
@@ -156,8 +159,14 @@ class Tournament:
         for i in range(nb_participants // 2):
             list_games.append(
                 (
-                    [self.participants[order[2 * i]].federal_id, config.SCORE["UNKNOW"]],
-                    [self.participants[order[2 * i + 1]].federal_id, config.SCORE["UNKNOW"]],
+                    [
+                        self.participants[order[2 * i]].federal_id,
+                        config.SCORE["UNKNOW"],
+                    ],
+                    [
+                        self.participants[order[2 * i + 1]].federal_id,
+                        config.SCORE["UNKNOW"],
+                    ],
                 )
             )
         return list_games
