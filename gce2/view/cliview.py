@@ -1,5 +1,3 @@
-from typing import Self, List, Dict
-
 import gce2.application.clicomponents.menu as m
 import gce2.model.player as p
 import gce2.config as c
@@ -38,11 +36,11 @@ class CliView:
     Generic methods
     """
 
-    def clear(self: Self) -> None:
+    def clear(self) -> None:
         """Create blank lines to clear terminal screen"""
         print("\n" * 40)
 
-    def separate(self: Self) -> None:
+    def separate(self) -> None:
         """Create a line to separate horizontaly"""
         print("___________________________")
 
@@ -50,7 +48,7 @@ class CliView:
     Ask methods, return request as dict
     """
 
-    def ask_menu_choice(self: Self, menu: m.Menu) -> None:
+    def ask_menu_choice(self, menu: m.Menu) -> None:
         """Print menu and ask to choice an item from it
 
         Args:
@@ -60,12 +58,12 @@ class CliView:
         print("Votre choix : ", end="")
         return input().strip()
 
-    def _ask_info(
-        self: Self,
-        list_field: List[str],
+    def ask_info(
+        self,
+        list_field: list[str],
         text_intro: str = None,
-        dict_default: Dict[str, str] = None,
-    ) -> Dict[str, str]:
+        dict_default: dict[str, str] = None,
+    ) -> dict[str, str]:
         """Generic method wich ask string data for a list of fields, one by one
 
         Args:
@@ -79,6 +77,9 @@ class CliView:
         Returns:
             Dict[str, str]: field names as key and user inputs as values
         """
+        if dict_default is None:
+            dict_default = {}
+
         self.clear()
         if text_intro is not None:
             print(text_intro)
@@ -103,7 +104,7 @@ class CliView:
         return data
 
     def select_info(
-        self: Self, dict_choicies: Dict[str | int, str], text_intro: str = None
+        self, dict_choicies: dict[str | int, str], text_intro: str = None
     ) -> str | int | None:
         """Ask user to chose one valuem, by key values, among a list of possibilites
 
@@ -140,7 +141,7 @@ class CliView:
                 return int(answer)
         return None
 
-    def ask_confirmation(self: Self, text: str = "Êtes-vous sûr ?") -> None:
+    def ask_confirmation(self, text: str = "Êtes-vous sûr ?") -> None:
         """Ask a confirmation, raise an exception if user doesn't
 
         Args:
@@ -155,54 +156,54 @@ class CliView:
         else:
             raise e.CancelledActionException
 
-    # def ask_tournament_id(self: Self) -> Dict[str, str]:
+    # def ask_tournament_id(self) -> dict[str, str]:
     #     return self._ask_info(
     #         list_field=["tournament_id"],
     #         text_intro="Quel tournoi voulez-vous sélectionner ?",
     #     )
 
-    def ask_new_tournament(self: Self) -> Dict[str, str]:
+    def ask_new_tournament(self) -> dict[str, str]:
         """Ask user needed information to create a new tournament.
 
         Returns:
             Dict[str, str]: return dict with tournament core attributes
             as keys and user answer as values (or default for "max_round")
         """
-        return self._ask_info(
+        return self.ask_info(
             list_field=t.Tournament.CORE_ATTRIBUTES,
             text_intro="Merci de renseigner les informations suivantes",
             dict_default={"max_round": c.DEFAULT_NBROUND},
         )
 
-    def ask_new_player(self: Self) -> Dict[str, str]:
+    def ask_new_player(self) -> dict[str, str]:
         """Ask user needed information to create a new player.
 
         Returns:
             Dict[str, str]: return dict with player core attributes
             as keys and user answer as values.
         """
-        return self._ask_info(
+        return self.ask_info(
             p.Player.__slots__, "Merci de renseigner les informations suivantes"
         )
 
-    def ask_player_id(self: Self) -> Dict[str, str]:
+    def ask_player_id(self) -> dict[str, str]:
         """Ask a player federal id.
 
         Returns:
             Dict[str, str]: return dict with "federal_id" as key and user answer as value.
         """
-        return self._ask_info(list_field=["federal_id"])
+        return self.ask_info(list_field=["federal_id"])
 
     """
     Templates
     """
 
-    def template_list_players(self: Self, player_list: List[p.Player]) -> str:
+    def template_list_players(self, player_list: list[p.Player]) -> str:
         lines = ["Voici la liste des joueurs enregistrés :"]
         lines.extend([str(player) for player in player_list])
         return "\n".join(lines)
 
-    def template_resume_player(self: Self, player: p.Player) -> str:
+    def template_resume_player(self, player: p.Player) -> str:
         text = ["Détail du joueur :"]
         for field in p.Player.__slots__:
             if field in self.FIELD_DESCRIPTION:
@@ -210,11 +211,11 @@ class CliView:
             else:
                 field_name = field.capitalize()
             field_value = getattr(player, field)
-            text.append(f"{field_name:<20} :\t{field_value}")
+            text.append(f"{field_name:.<40} :\t{field_value}")
         return "\n".join(text)
 
     def template_list_tournaments(
-        self: Self, tournaments_list: List[t.Tournament]
+        self, tournaments_list: list[t.Tournament]
     ) -> str:
         if tournaments_list is not None:
             lines = ["Voici la liste des tournois demandés :"]
@@ -228,13 +229,13 @@ class CliView:
         else:
             return "Aucun tournoi ne correspond à votre demande."
 
-    def template_resume_tournament(self: Self, tournament: t.Tournament) -> str:
+    def template_resume_tournament(self, tournament: t.Tournament) -> str:
         if tournament is not None:
             return f"Le tournoi {tournament.name} se déroule du {tournament.start_date} au {tournament.end_date}"
         else:
             return "Aucun tournoi ne correspond à votre demande"
 
-    def template_list_participants(self: Self, tournament: t.Tournament) -> str:
+    def template_list_participants(self, tournament: t.Tournament) -> str:
         list_participants = tournament.participants
 
         if len(list_participants) > 0:
@@ -244,14 +245,14 @@ class CliView:
         else:
             return "Ce tournoi n'a pas encore de participants."
 
-    def template_last_round(self: Self, tournament: t.Tournament) -> str:
+    def template_last_round(self, tournament: t.Tournament) -> str:
         if tournament.nb_rounds == 0:
             return "Ce tournoi n'a pas encore de tour enregistré."
         else:
             last_round = tournament.last_round
             return f"{last_round.name} (tour {tournament.nb_rounds} sur {tournament.max_round})"
 
-    def template_list_rounds(self: Self, tournament: t.Tournament) -> str:
+    def template_list_rounds(self, tournament: t.Tournament) -> str:
         if tournament.nb_rounds == 0:
             return "Ce tournoi n'a pas encore de tour enregistré."
 
@@ -265,7 +266,7 @@ class CliView:
             lines.append(f"> {round.name} ({statut})")
         return "\n".join(lines)
 
-    def template_resume_round(self: Self, round: r.Round) -> str:
+    def template_resume_round(self, round: r.Round) -> str:
         if round.iscompleted():
             intro = f"{round.name} (fini) s'est déroulé du {round.start_datetime} au {round.end_datetime}"
         else:

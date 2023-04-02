@@ -129,6 +129,25 @@ class StartTournamentCommand(AppCommand):
                 return tournament
 
 
+class PostGamesResultCommand(AppCommand):
+    def executate(self):
+        data = self.app.request
+        manager = self.app.managers["TournamentManager"]
+        tournament = manager.get_tournament_by_id(data["tournament_id"])
+        round = tournament.rounds[data["round_id"]]
+
+        for updating_game in data["games"]:
+            round.game_update(updating_game)
+        try:
+            manager.update_rounds(tournament)
+        except e.InsertRoundException:
+            self.app.alert_msg = "Les résultats n'ont pas pu être enregistrés."
+            return None
+        else:
+            self.app.alert_msg = "Les résultats ont éte pris en compte."
+        return tournament
+
+
 class GetRoundCommand(AppCommand):
     def executate(self):
         manager = self.app.managers["TournamentManager"]

@@ -1,6 +1,5 @@
 import random
 from pprint import pformat
-from typing import Self, List
 
 import gce2.config as config
 import gce2.exception.exception as e
@@ -21,16 +20,16 @@ class Tournament:
     )
 
     def __init__(
-        self: Self,
+        self,
         name: str,
         description: str,
         place: str,
         max_round: int | str,
         start_date: str = None,
         end_date: str = None,
-        rounds: List[r.Round] = None,
+        rounds: list[r.Round] = None,
         doc_id: int = None,
-        participants: List[p.Player] = None,
+        participants: list[p.Player] = None,
     ) -> None:
 
         self.name = name
@@ -57,26 +56,26 @@ class Tournament:
             + pformat(self.to_dict(), indent=4, sort_dicts=False)
         )
 
-    def __str__(self) -> str:
+    def __str__(self):
         return (
             f"{self.name} ({self.description}) à {self.place} du {self.start_date} au {self.end_date}."
             f"Tournoi en {self.max_round} tours."
         )
 
-    def can_start(self):
+    def can_start(self) -> bool:
         nb_participants = len(self.participants)
         if nb_participants > 0 and nb_participants % 2 == 0:
             return True
         else:
             return False
 
-    def is_started(self):
+    def is_started(self) -> bool:
         if len(self.rounds) > 0:
             return True
         return False
 
     @property
-    def core_dict(self):
+    def core_dict(self) -> dict[str, str | int]:
         return {
             attribute: getattr(self, attribute) for attribute in self.CORE_ATTRIBUTES
         }
@@ -100,11 +99,11 @@ class Tournament:
             self.core_dict | {"rounds": round_list} | {"participants": participant_list}
         )
 
-    def serialize_rounds(self) -> list:
+    def serialize_rounds(self) -> list[r.Round]:
         return [round.serialize() for round in self.rounds]
 
     @classmethod
-    def deserialize(cls, data: dict) -> object:
+    def deserialize(cls, data: dict):
         initializing_data = {
             attribute: data[attribute]
             for attribute in cls.CORE_ATTRIBUTES
@@ -149,6 +148,19 @@ class Tournament:
     def add_participant(self, participant):
         if isinstance(participant, p.Player):
             self.participants.append(participant)
+
+    # @property
+    # def participants_names(self) -> dict[str, str]:
+    #     return {
+    #         player.federal_id: f"{player.firstname} {player.lastname}"
+    #         for player in self.participants
+    #     }
+
+    # def get_playerfullname_fromid(self, federal_id) -> str | None:
+    #     participants_names = self.participants_names
+    #     if federal_id in participants_names:
+    #         return participants_names[federal_id]
+    #     return None
 
     def generate_random_games(self):
         nb_participants = len(self.participants)

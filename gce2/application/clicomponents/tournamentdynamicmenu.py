@@ -1,6 +1,7 @@
 from gce2.application.clicomponents.dynamicmenu import DynamicMenu
 import gce2.controller.commands as commands
 from gce2.exception.exception import CancelledActionException
+import gce2.config as c
 
 
 class TournamentDynamicMenu(DynamicMenu):
@@ -50,6 +51,12 @@ class TournamentDynamicMenu(DynamicMenu):
                 request=self.request_round_id,
                 command=commands.GetRoundCommand(self.app),
                 template=self.app.view.template_resume_round,
+            )
+            self.add_commands(
+                text="Ajouter des résultats de matchs au tour en cours",
+                request=self.request_unknown_results,
+                command=commands.PostGamesResultCommand(self.app),
+                template=self.app.view.template_last_round,
             )
         else:
             if tournament.can_start():
@@ -108,3 +115,46 @@ class TournamentDynamicMenu(DynamicMenu):
             self.app.view.select_info(list_choicies, "Tours finis ou entamés :") - 1
         )
         return {"tournament_id": self.linked_object.doc_id, "round_id": round_id}
+
+    def request_unknown_results(self):
+        tournament = self.linked_object
+        current_round = tournament.last_round
+        participants_names = {
+            player.federal_id: f"{player.firstname} {player.lastname}"
+            for player in tournament.participants
+        }
+
+        list_results = []
+        for game in current_round.games:
+            if c.SCORE["UNKNOW"] in {game[0][1], game[1][1]}:
+
+                name_p1 = participants_names[game[0][0]]
+                name_p2 = participants_names[game[1][0]]
+                list_choicies = {
+                    1: f"{name_p1} a gagné",
+                    2: f"{name_p2} a gagné",
+                    3: "Égalité",
+                    4: "Je ne sais pas",
+                }
+                answer = self.app.view.select_info(
+                    list_choicies,
+                    f"{name_p1} contre {name_p2}:\nQuel est le résultat du match ?",
+                )
+                updated_game = game.copy()
+                if answer == 4:
+                    continue
+                elif answer == 1:
+                    updated_game[0][1] = c.SCORE["WIN"]
+                    updated_game[1][1] = c.SCORE["LOSE"]
+                elif answer == 2:
+                    updated_game[0][1] = c.SCORE["LOSE"]
+                    updated_game[1][1] = c.SCORE["WIN"]
+                elif answer == 3:
+                    updated_game[0][1] = c.SCORE["TIE"]
+                    updated_game[1][1] = c.SCORE["TIE"]
+                list_results.append(updated_game)
+        return {
+            "tournament_id": tournament.doc_id,
+            "round_id": tournament.nb_rounds - 1,
+            "games": list_results,
+        }
