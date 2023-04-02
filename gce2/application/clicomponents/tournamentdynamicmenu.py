@@ -52,12 +52,30 @@ class TournamentDynamicMenu(DynamicMenu):
                 command=commands.GetRoundCommand(self.app),
                 template=self.app.view.template_resume_round,
             )
-            self.add_commands(
-                text="Ajouter des résultats de matchs au tour en cours",
-                request=self.request_unknown_results,
-                command=commands.PostGamesResultCommand(self.app),
-                template=self.app.view.template_last_round,
-            )
+
+            if not tournament.is_finished():
+                if tournament.last_round.iscompleted():
+                    self.add_commands(
+                        text="Lancer le tour suivant",
+                        request=self.request_tournament_id,
+                        command=commands.StartNextRoundCommand(self.app),
+                        template=self.app.view.template_last_round,
+                    )
+                else:
+                    if tournament.last_round.allresults_known():
+                        self.add_commands(
+                            text="Cloturer le tour en cours (plus de changement possible)",
+                            request=self.request_tournament_id,
+                            command=commands.CloseRoundCommand(self.app),
+                            template=self.app.view.template_last_round,
+                        )
+                    else:
+                        self.add_commands(
+                            text="Ajouter des résultats de matchs au tour en cours",
+                            request=self.request_unknown_results,
+                            command=commands.PostGamesResultCommand(self.app),
+                            template=self.app.view.template_last_round,
+                        )
         else:
             if tournament.can_start():
                 self.add_commands(

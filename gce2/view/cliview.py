@@ -139,7 +139,7 @@ class CliView:
                 return answer
             if _is_int(answer) and int(answer) in dict_choicies.keys():
                 return int(answer)
-        return None
+        raise e.CancelledActionException
 
     def ask_confirmation(self, text: str = "Êtes-vous sûr ?") -> None:
         """Ask a confirmation, raise an exception if user doesn't

@@ -1,5 +1,6 @@
 from pprint import pformat
 from typing import NewType, Self
+import gce2.config as c
 
 FEDERAL_ID = NewType("FEDERAL_ID", str)
 SCORE = NewType("SCORE", float)
@@ -35,9 +36,12 @@ class Round:
         )
 
     def iscompleted(self):
-        if self.end_datetime is not None:
+        if self.end_datetime is not None and self.allresults_known():
             return True
         return False
+
+    def allresults_known(self):
+        return all([self.game_finished(game) for game in self.games])
 
     @property
     def tournament(self):
@@ -80,3 +84,21 @@ class Round:
             self.games[index] = updated_game
             return self
         return False
+
+    def get_results(self):
+        dict_results = {}
+        for game in self.games:
+            for i in range(0, 2):
+                dict_results[game[i][0]] = game[i][1]
+        return dict_results
+
+    @staticmethod
+    def game_finished(game: GAME):
+        if game[0][1] == c.SCORE["LOSE"] and game[1][1] == c.SCORE["WIN"]:
+            return True
+        elif game[0][1] == c.SCORE["WIN"] and game[1][1] == c.SCORE["LOSE"]:
+            return True
+        elif game[0][1] == c.SCORE["TIE"] and game[1][1] == c.SCORE["TIE"]:
+            return True
+        else:
+            return False

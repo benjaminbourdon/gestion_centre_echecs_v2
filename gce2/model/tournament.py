@@ -70,7 +70,12 @@ class Tournament:
             return False
 
     def is_started(self) -> bool:
-        if len(self.rounds) > 0:
+        if self.nb_rounds > 0:
+            return True
+        return False
+
+    def is_finished(self) -> bool:
+        if self.nb_rounds >= self.max_round and self.last_round.iscompleted():
             return True
         return False
 
@@ -162,8 +167,12 @@ class Tournament:
     #         return participants_names[federal_id]
     #     return None
 
+    @property
+    def nb_participants(self):
+        return len(self.participants)
+
     def generate_random_games(self):
-        nb_participants = len(self.participants)
+        nb_participants = self.participants
 
         list_games = []
         order = list(range(nb_participants))
@@ -177,6 +186,35 @@ class Tournament:
                     ],
                     [
                         self.participants[order[2 * i + 1]].federal_id,
+                        config.SCORE["UNKNOW"],
+                    ],
+                )
+            )
+        return list_games
+
+    def score_participants(self):
+        results = {participant.federal_id: 0 for participant in self.participants}
+
+        for round in self.rounds:
+            if round.allresults_known():
+                round_results = round.get_results()
+                for participant in results:
+                    results[participant] += round_results[participant]
+        return results
+
+    def generate_ranked_games(self):
+        dict_participants = self.score_participants()
+        ranked_participants = sorted(dict_participants, key=dict_participants.get, reverse=True)
+        list_games = []
+        for i in range(self.nb_participants // 2):
+            list_games.append(
+                (
+                    [
+                        ranked_participants[2 * i],
+                        config.SCORE["UNKNOW"],
+                    ],
+                    [
+                        ranked_participants[2 * i + 1],
                         config.SCORE["UNKNOW"],
                     ],
                 )

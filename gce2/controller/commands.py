@@ -112,17 +112,15 @@ class StartTournamentCommand(AppCommand):
 
             date_today = date.today().strftime("%d/%m/%y")
             first_round = Round(
-                {
-                    "name": "Tour 1",
-                    "start_datetime": date_today,
-                    "games": tournament.generate_random_games(),
-                }
+                name="Tour 1",
+                start_datetime=date_today,
+                games=tournament.generate_random_games(),
             )
             try:
                 tournament.add_round(first_round)
                 manager.update_rounds(tournament)
             except e.InsertRoundException:
-                self.app.alert_msg = "Le premier tour n'a pas pu être crée."
+                self.app.alert_msg = "Le premier tour n'a pas pu être créé."
                 return None
             else:
                 self.app.alert_msg = "Le tournoi a correctement été lancé."
@@ -145,7 +143,63 @@ class PostGamesResultCommand(AppCommand):
             return None
         else:
             self.app.alert_msg = "Les résultats ont éte pris en compte."
-        return tournament
+            return tournament
+
+
+class CloseRoundCommand(AppCommand):
+    def executate(self):
+        data = self.app.request
+        manager = self.app.managers["TournamentManager"]
+        tournament = manager.get_tournament_by_id(data["tournament_id"])
+
+        if tournament.last_round.allresults_known():
+            from datetime import date
+
+            date_today = date.today().strftime("%d/%m/%y")
+            tournament.last_round.end_datetime = date_today
+            manager.update_rounds(tournament)
+
+            if tournament.nb_rounds < tournament.max_round:
+                self.app.alert_msg = (
+                    "Le tour est cloturé, vous pouvez lancer le tour suivant."
+                )
+            else:
+                self.app.alert_msg = (
+                    "Le tournoi est cloturé (tous les tours sont finis)."
+                )
+            return tournament
+        else:
+            self.app.alert_msg = (
+                "Le tour ne peut pas être cloturé (des résultats ne sont pas connus)."
+            )
+            return None
+
+
+class StartNextRoundCommand(AppCommand):
+    def executate(self):
+        from gce2.model.round import Round
+        from datetime import date
+
+        data = self.app.request
+        manager = self.app.managers["TournamentManager"]
+        tournament = manager.get_tournament_by_id(data["tournament_id"])
+
+        date_today = date.today().strftime("%d/%m/%y")
+        nb_next_round = tournament.nb_rounds + 1
+        next_round = Round(
+            name=f"Tour {nb_next_round}",
+            start_datetime=date_today,
+            games=tournament.generate_ranked_games(),
+        )
+        try:
+            tournament.add_round(next_round)
+            manager.update_rounds(tournament)
+        except e.InsertRoundException:
+            self.app.alert_msg = "Le tour suivant n'a pas pu être créé."
+            return None
+        else:
+            self.app.alert_msg = "Le tour suivant a correctement été créé."
+            return tournament
 
 
 class GetRoundCommand(AppCommand):
@@ -157,14 +211,6 @@ class GetRoundCommand(AppCommand):
         tournament = manager.get_tournament_by_id(tournament_id)
         round = tournament.rounds[round_id]
         return round
-
-
-# class PostGameResultCommand(AppCommand):
-#     def executate(self):
-#         manager = self.app.managers["TournamentManager"]
-#         tournament_id = self.app.request["tournament_id"]
-#         round_id = self.app.request["round_id"]
-#         game_result = self.app.request["game_result"]
 
 
 class CLIAppCommand(AppCommand, ABC):
