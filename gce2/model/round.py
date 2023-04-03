@@ -78,6 +78,22 @@ class Round:
             return True
         return False
 
+    def game_exists(self, player1, player2) -> bool:
+        tested_game = [
+            [
+                player1,
+                c.SCORE["UNKNOW"]
+            ],
+            [
+                player2,
+                c.SCORE["UNKNOW"]
+            ]
+        ]
+        for game in self.games:
+            if self.same_game(tested_game, game):
+                return True
+        return False
+
     def game_update(self, updated_game: GAME) -> Self | None:
         index = self.index_game(updated_game)
         if index is not None:

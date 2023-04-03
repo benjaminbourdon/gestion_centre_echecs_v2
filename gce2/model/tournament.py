@@ -204,19 +204,33 @@ class Tournament:
 
     def generate_ranked_games(self):
         dict_participants = self.score_participants()
-        ranked_participants = sorted(dict_participants, key=dict_participants.get, reverse=True)
+        ranked_participants = sorted(
+            dict_participants, key=dict_participants.get, reverse=True
+        )
         list_games = []
-        for i in range(self.nb_participants // 2):
+        while len(ranked_participants) > 0:
+            player1 = ranked_participants.pop(0)
+            player2 = None
+            for index, other_player in enumerate(ranked_participants):
+                if not self.already_played(player1, other_player):
+                    player2 = ranked_participants.pop(index)
+                    break
+            if player2 is None:
+                player2 = ranked_participants.pop(0)
+
             list_games.append(
                 (
                     [
-                        ranked_participants[2 * i],
+                        player1,
                         config.SCORE["UNKNOW"],
                     ],
                     [
-                        ranked_participants[2 * i + 1],
+                        player2,
                         config.SCORE["UNKNOW"],
                     ],
                 )
             )
         return list_games
+
+    def already_played(self, player1, player2):
+        return any([round.game_exists(player1, player2) for round in self.rounds])
