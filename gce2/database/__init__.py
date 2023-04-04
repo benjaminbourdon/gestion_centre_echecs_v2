@@ -1,5 +1,7 @@
 from pathlib import Path
+
 from tinydb import TinyDB
+
 from gce2 import config
 
 
@@ -19,7 +21,3 @@ def get_connexion_player():
 
 def get_connexion_tournament():
     return _get_connexion(config.PATH_JSONFILE_TOURNAMENT)
-
-
-def get_connexion_rounds():
-    return _get_connexion(config.PATH_JSONFILE_ROUNDS)

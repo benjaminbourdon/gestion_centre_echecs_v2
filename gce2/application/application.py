@@ -1,7 +1,7 @@
 from abc import ABC
 
 import gce2.controller.commands as commands
-import gce2.exception.exception as e
+import gce2.exception.exception as exception
 
 
 class Application(ABC):
@@ -18,14 +18,18 @@ class Application(ABC):
             if request is not None and callable(request):
                 try:
                     data_fromrequest = request()
-                except e.CancelledActionException:
+                except exception.CancelledActionException:
                     self.alert_msg = "La saisie a éte annulée."
                     return
                 else:
                     self.request.update(data_fromrequest)
-            respond = command.executate()
-            if hasattr(command, "log") and callable(command.log):
-                command.log()
+
+            try:
+                respond = command.executate()
+            except exception.InvalidRequestException:
+                self.alert_msg = "La requête est incorrecte. L'action n'a pas pu être réalisée."
+                return
+
             if template is not None and callable(template):
                 respond = template(respond)
             self.respond = respond

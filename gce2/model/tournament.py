@@ -2,7 +2,7 @@ import random
 from pprint import pformat
 
 import gce2.config as config
-import gce2.exception.exception as e
+import gce2.exception.exception as exception
 import gce2.manager.playermanager as pm
 import gce2.model.player as p
 import gce2.model.round as r
@@ -44,8 +44,9 @@ class Tournament:
         if rounds is not None:
             for round in rounds:
                 self.add_round(round)
+
         self.participants = []
-        if participants is not None and isinstance(participants, list):
+        if participants is not None:
             for participant in participants:
                 self.add_participant(participant)
 
@@ -58,8 +59,9 @@ class Tournament:
 
     def __str__(self):
         return (
-            f"{self.name} ({self.description}) à {self.place} du {self.start_date} au {self.end_date}."
-            f"Tournoi en {self.max_round} tours."
+            f"{self.name:<30}\t se déroule à {self.place:^15}, "
+            f"du {self.start_date} au {self.end_date}, en {self.max_round} tours.\t"
+            f"Description : {self.description}"
         )
 
     def can_start(self) -> bool:
@@ -141,11 +143,11 @@ class Tournament:
 
     def add_round(self, round):
         if not (isinstance(round, r.Round)):
-            raise e.InsertRoundException
+            raise exception.InsertRoundException
         if self.nb_rounds > self.max_round:
-            raise e.InsertRoundException
+            raise exception.InsertRoundException
         if self.nb_rounds > 0 and not (self.last_round.iscompleted()):
-            raise e.InsertRoundException
+            raise exception.InsertRoundException
 
         round.tournament = self
         self.rounds.append(round)
@@ -172,7 +174,7 @@ class Tournament:
         return len(self.participants)
 
     def generate_random_games(self):
-        nb_participants = self.participants
+        nb_participants = self.nb_participants
 
         list_games = []
         order = list(range(nb_participants))
@@ -232,5 +234,5 @@ class Tournament:
             )
         return list_games
 
-    def already_played(self, player1, player2):
-        return any([round.game_exists(player1, player2) for round in self.rounds])
+    def already_played(self, id_player1, id_player2) -> bool:
+        return any([round.game_exists(id_player1, id_player2) for round in self.rounds])

@@ -1,9 +1,9 @@
 import gce2.application.clicomponents.menu as m
-import gce2.model.player as p
 import gce2.config as c
-import gce2.exception.exception as e
-import gce2.model.tournament as t
+import gce2.exception.exception as exception
+import gce2.model.player as p
 import gce2.model.round as r
+import gce2.model.tournament as t
 from gce2.utils import _is_int
 
 
@@ -36,13 +36,38 @@ class CliView:
     Generic methods
     """
 
-    def clear(self) -> None:
+    @staticmethod
+    def clear() -> None:
         """Create blank lines to clear terminal screen"""
         print("\n" * 40)
 
-    def separate(self) -> None:
+    @staticmethod
+    def separate() -> None:
         """Create a line to separate horizontaly"""
         print("___________________________")
+
+    @classmethod
+    def print_ask_header(cls, text_intro: str):
+        """Clear and print introductif text, including way to cancel"""
+        cls.clear()
+        if text_intro is not None:
+            print(text_intro)
+        print(f'(Taper "{cls.CANCEL_WORLD}" à tout moment pour annuler la saisie)')
+
+    @classmethod
+    def cancellable_input(cls, text: str) -> str:
+        """Input like. Raise CancelledActionException if CANCEL_WORLD is entered."""
+        answer = input(text).strip()
+        if answer == cls.CANCEL_WORLD:
+            raise exception.CancelledActionException
+        return answer
+
+    @classmethod
+    def get_fieldname(self, field: str) -> str:
+        if field in self.FIELD_DESCRIPTION:
+            return self.FIELD_DESCRIPTION[field].capitalize()
+        else:
+            return field.capitalize()
 
     """
     Ask methods, return request as dict
@@ -80,10 +105,7 @@ class CliView:
         if dict_default is None:
             dict_default = {}
 
-        self.clear()
-        if text_intro is not None:
-            print(text_intro)
-        print(f'(Taper "{self.CANCEL_WORLD}" à tout moment pour annuler la saisie)')
+        self.print_ask_header(text_intro)
 
         data = {}
         for field in list_field:
@@ -94,10 +116,8 @@ class CliView:
             if field in dict_default:
                 text += f' ("{dict_default[field]}" par défaut)'
 
-            answer = input(f"{text} > ").strip()
-            if answer == self.CANCEL_WORLD:
-                raise e.CancelledActionException
-            elif answer == "":
+            answer = self.cancellable_input(f"{text} > ")
+            if answer == "":
                 data[field] = dict_default[field]
             else:
                 data[field] = answer
@@ -120,10 +140,8 @@ class CliView:
             str | int | None: return string or integet key choose, same type as in dict_choicies argument.
             None if no valid answer after NB_MAXTRY tries.
         """
-        self.clear()
-        if text_intro is not None:
-            print(text_intro)
-        print(f'(Taper "{self.CANCEL_WORLD}" à tout moment pour annuler la saisie)')
+        self.print_ask_header(text_intro)
+
         for key, values in dict_choicies.items():
             print(f"[{key}]\t{values}")
 
@@ -132,14 +150,12 @@ class CliView:
                 print(
                     f"Saisie incorrecte. {nb_try+1}e essai ({self.NB_MAXTRY} essais maximum)"
                 )
-            answer = input("Votre choix (sensible à la case) : ").strip()
-            if answer == self.CANCEL_WORLD:
-                raise e.CancelledActionException
+            answer = self.cancellable_input("Votre choix (sensible à la case) : ")
             if answer in dict_choicies.keys():
                 return answer
             if _is_int(answer) and int(answer) in dict_choicies.keys():
                 return int(answer)
-        raise e.CancelledActionException
+        raise exception.CancelledActionException
 
     def ask_confirmation(self, text: str = "Êtes-vous sûr ?") -> None:
         """Ask a confirmation, raise an exception if user doesn't
@@ -151,16 +167,10 @@ class CliView:
             CancelledActionException: raise if user doesn't confirm
         """
         answer = input(text + "(O / n)").strip()
-        if answer in ["", "O"]:
+        if answer in ["", "O", "o"]:
             return None
         else:
-            raise e.CancelledActionException
-
-    # def ask_tournament_id(self) -> dict[str, str]:
-    #     return self._ask_info(
-    #         list_field=["tournament_id"],
-    #         text_intro="Quel tournoi voulez-vous sélectionner ?",
-    #     )
+            raise exception.CancelledActionException
 
     def ask_new_tournament(self) -> dict[str, str]:
         """Ask user needed information to create a new tournament.
@@ -206,22 +216,17 @@ class CliView:
     def template_resume_player(self, player: p.Player) -> str:
         text = ["Détail du joueur :"]
         for field in p.Player.__slots__:
-            if field in self.FIELD_DESCRIPTION:
-                field_name = self.FIELD_DESCRIPTION[field].capitalize()
-            else:
-                field_name = field.capitalize()
+            field_name = self.get_fieldname(field)
             field_value = getattr(player, field)
             text.append(f"{field_name:.<40} :\t{field_value}")
         return "\n".join(text)
 
-    def template_list_tournaments(
-        self, tournaments_list: list[t.Tournament]
-    ) -> str:
+    def template_list_tournaments(self, tournaments_list: list[t.Tournament]) -> str:
         if tournaments_list is not None:
             lines = ["Voici la liste des tournois demandés :"]
             lines.extend(
                 [
-                    f"({tournament.doc_id:^3}) {tournament}"
+                    f"({tournament.doc_id:^4}) {tournament}"
                     for tournament in tournaments_list
                 ]
             )
@@ -231,14 +236,14 @@ class CliView:
 
     def template_resume_tournament(self, tournament: t.Tournament) -> str:
         if tournament is not None:
-            return f"Le tournoi {tournament.name} se déroule du {tournament.start_date} au {tournament.end_date}"
+            return f"Le tournoi {tournament.name} se déroule du {tournament.start_date} au {tournament.end_date}."
         else:
             return "Aucun tournoi ne correspond à votre demande"
 
     def template_list_participants(self, tournament: t.Tournament) -> str:
         list_participants = tournament.participants
 
-        if len(list_participants) > 0:
+        if tournament.nb_participants > 0:
             lines = ["Les participants au tournoi sont :"]
             lines.extend([str(participant) for participant in list_participants])
             return "\n".join(lines)

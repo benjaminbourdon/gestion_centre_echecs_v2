@@ -8,3 +8,7 @@ class NotInstanciatedMenuException(Exception):
 
 class InsertRoundException(Exception):
     pass
+
+
+class InvalidRequestException(Exception):
+    pass

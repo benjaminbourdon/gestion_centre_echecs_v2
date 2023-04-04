@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import gce2.application.application as appmodul
 import gce2.application.cliapplication as cliappmodul
 import gce2.application.clicomponents.menu as menumodul
-import gce2.exception.exception as e
+import gce2.exception.exception as exception
 
 
 class Command(ABC):
@@ -25,6 +25,14 @@ class AppCommand(Command, ABC):
             raise Exception
         super().__init__(**kwargs)
 
+    def get_request(self, key):
+        try:
+            requested = self.app.request[key]
+        except KeyError:
+            raise exception.InvalidRequestException
+        else:
+            return requested
+
 
 class GetAllPlayersCommand(AppCommand):
     def executate(self):
@@ -33,8 +41,13 @@ class GetAllPlayersCommand(AppCommand):
 
 class GetPlayerCommand(AppCommand):
     def executate(self):
-        federal_id = self.app.request["federal_id"]
-        return self.app.managers["PlayerManager"].get_player(federal_id)
+        federal_id = self.get_request("federal_id")
+        player = self.app.managers["PlayerManager"].get_player(federal_id)
+        if player is not None:
+            return player
+        else:
+            self.app.alert_msg = f"Aucun joueur ne correspond à l'identifiant {federal_id}."
+            raise exception.InvalidRequestException
 
 
 class PostPlayerCommand(AppCommand):
@@ -119,7 +132,7 @@ class StartTournamentCommand(AppCommand):
             try:
                 tournament.add_round(first_round)
                 manager.update_rounds(tournament)
-            except e.InsertRoundException:
+            except exception.InsertRoundException:
                 self.app.alert_msg = "Le premier tour n'a pas pu être créé."
                 return None
             else:
@@ -138,7 +151,7 @@ class PostGamesResultCommand(AppCommand):
             round.game_update(updating_game)
         try:
             manager.update_rounds(tournament)
-        except e.InsertRoundException:
+        except exception.InsertRoundException:
             self.app.alert_msg = "Les résultats n'ont pas pu être enregistrés."
             return None
         else:
@@ -194,7 +207,7 @@ class StartNextRoundCommand(AppCommand):
         try:
             tournament.add_round(next_round)
             manager.update_rounds(tournament)
-        except e.InsertRoundException:
+        except exception.InsertRoundException:
             self.app.alert_msg = "Le tour suivant n'a pas pu être créé."
             return None
         else:
@@ -244,7 +257,7 @@ class LaunchDynamicMenuCommand(CLIAppCommand):
             dynamic_menu = self.class_menu(
                 app=self.app, name="Menu dynamique", upper_menu=self.app.menu
             )
-        except e.NotInstanciatedMenuException:
+        except exception.NotInstanciatedMenuException:
             self.app.alert_msg = "Le menu n'a pas pu être instancié."
         else:
             self.app.transition_to(dynamic_menu)
