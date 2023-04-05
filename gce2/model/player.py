@@ -1,8 +1,8 @@
 class Player:
-    __slots__ = ("firstname", "lastname", "birthday", "federal_id")
+    CORE_ATTRIBUTES = ("firstname", "lastname", "birthday", "federal_id")
 
     def __init__(self, **kwargs) -> None:
-        for key in self.__slots__:
+        for key in self.CORE_ATTRIBUTES:
             setattr(self, key, kwargs[key])
 
     def __repr__(self) -> str:
@@ -12,7 +12,7 @@ class Player:
         return f"{self.federal_id:<9}\t{self.fullname:<25}(né le {self.birthday})"
 
     def to_dict(self) -> dict[str, str]:
-        return {key: getattr(self, key) for key in self.__slots__}
+        return {key: getattr(self, key) for key in self.CORE_ATTRIBUTES}
 
     def serialize(self) -> dict:
         return self.to_dict()

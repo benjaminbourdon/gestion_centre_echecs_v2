@@ -193,7 +193,7 @@ class CliView:
             as keys and user answer as values.
         """
         return self.ask_info(
-            p.Player.__slots__, "Merci de renseigner les informations suivantes"
+            p.Player.CORE_ATTRIBUTES, "Merci de renseigner les informations suivantes"
         )
 
     def ask_player_id(self) -> dict[str, str]:
@@ -215,7 +215,7 @@ class CliView:
 
     def template_resume_player(self, player: p.Player) -> str:
         text = ["Détail du joueur :"]
-        for field in p.Player.__slots__:
+        for field in p.Player.CORE_ATTRIBUTES:
             field_name = self.get_fieldname(field)
             field_value = getattr(player, field)
             text.append(f"{field_name:.<40} :\t{field_value}")
