@@ -26,12 +26,6 @@ class PlayerManager:
     def get_player(self, federal_id):
         with database.get_connexion_player() as json_file:
             doc_id = Player.federalid_to_int(federal_id)
-            data = json_file.get(doc_id=doc_id)
-            try:
-                player = Player.deserialize(data)
-            except AttributeError:
+            if (data := json_file.get(doc_id=doc_id)) is None:
                 return None
-            except TypeError:
-                return None
-            else:
-                return player
+            return Player.deserialize(data)

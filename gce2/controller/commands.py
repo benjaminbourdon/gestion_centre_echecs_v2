@@ -33,6 +33,35 @@ class AppCommand(Command, ABC):
         else:
             return requested
 
+    def get_allrequests(self):
+        requested = self.app.request
+        if isinstance(requested, dict):
+            return requested
+        else:
+            raise exception.InvalidRequestException
+
+    def get_tournament_fromrequest(self):
+        manager = self.app.managers["TournamentManager"]
+        tournament_id = self.get_request("tournament_id")
+        tournament = manager.get_tournament_by_id(tournament_id)
+        if tournament is None:
+            self.app.alert_msg = (
+                f"Le tournoi selectionné n'a pas éte trouvé (id={tournament_id})."
+            )
+            raise exception.InvalidRequestException
+        return tournament
+
+    def get_round_fromrequest(self):
+        tournament = self.get_tournament_fromrequest()
+        round_id = self.get_request("round_id")
+        try:
+            round = tournament.rounds[round_id]
+        except IndexError:
+            self.app.alert_msg = "Le tour selectionné n'a pas éte trouvé."
+            raise exception.InvalidRequestException
+        else:
+            return round
+
 
 class GetAllPlayersCommand(AppCommand):
     def executate(self):
@@ -43,20 +72,21 @@ class GetPlayerCommand(AppCommand):
     def executate(self):
         federal_id = self.get_request("federal_id")
         player = self.app.managers["PlayerManager"].get_player(federal_id)
-        if player is not None:
-            return player
-        else:
-            self.app.alert_msg = f"Aucun joueur ne correspond à l'identifiant {federal_id}."
+        if player is None:
+            self.app.alert_msg = (
+                f"Aucun joueur ne correspond à l'identifiant {federal_id}."
+            )
             raise exception.InvalidRequestException
+        return player
 
 
 class PostPlayerCommand(AppCommand):
     def executate(self):
-        data = self.app.request
-        try:
-            new_player = self.app.managers["PlayerManager"].post_player(data)
-        except Exception:
-            raise Exception
+        data = self.get_allrequests()
+        new_player = self.app.managers["PlayerManager"].post_player(data)
+        if new_player is None:
+            self.app.alert_msg = "Le joueur n'a pas éte ajouté (donnée invalide)."
+            raise exception.InvalidRequestException
         else:
             self.app.alert_msg = "Le joueur a correctement été ajouté."
             return new_player
@@ -69,33 +99,21 @@ class GetAllTournamentsCommand(AppCommand):
 
 class GetTournamentCommand(AppCommand):
     def executate(self):
-        tournament_id = self.app.request["tournament_id"]
-        return self.app.managers["TournamentManager"].get_tournament_by_id(
-            tournament_id
-        )
-
-
-class GetParticipants(AppCommand):
-    def executate(self):
-        tournament_id = self.app.request["tournament_id"]
-        return (
-            self.app.managers["TournamentManager"]
-            .get_tournament_by_id(tournament_id)
-            .participants
-        )
+        return self.get_tournament_fromrequest()
 
 
 class AddParticipant(AppCommand):
     def executate(self):
-        tournament_id = self.app.request["tournament_id"]
-        participant_id = self.app.request["federal_id"]
+        tournament_id = self.get_request("tournament_id")
+        participant_id = self.get_request("federal_id")
         manager = self.app.managers["TournamentManager"]
         try:
             updated_tournament = manager.add_participant_in_tournament(
                 tournament_id, participant_id
             )
-        except Exception:
-            raise Exception
+        except AttributeError:
+            self.app.alert_msg = "Le participant n'a pas éte ajouté."
+            return None
         else:
             self.app.alert_msg = "Le participant a correctement éte ajouté."
             return updated_tournament
@@ -103,7 +121,7 @@ class AddParticipant(AppCommand):
 
 class PostTournamentCommand(AppCommand):
     def executate(self):
-        data = self.app.request
+        data = self.get_allrequests()
         manager = self.app.managers["TournamentManager"]
         try:
             new_tournament = manager.post_tournament(data)
@@ -116,17 +134,14 @@ class PostTournamentCommand(AppCommand):
 
 class StartTournamentCommand(AppCommand):
     def executate(self):
-        tournament_id = self.app.request["tournament_id"]
         manager = self.app.managers["TournamentManager"]
-        tournament = manager.get_tournament_by_id(tournament_id)
+        tournament = self.get_tournament_fromrequest()
         if not tournament.is_started() and len(tournament.participants) > 0:
-            from datetime import date
             from gce2.model.round import Round
 
-            date_today = date.today().strftime("%d/%m/%y")
             first_round = Round(
                 name="Tour 1",
-                start_datetime=date_today,
+                start_datetime=self.app.today,
                 games=tournament.generate_random_games(),
             )
             try:
@@ -142,35 +157,30 @@ class StartTournamentCommand(AppCommand):
 
 class PostGamesResultCommand(AppCommand):
     def executate(self):
-        data = self.app.request
-        manager = self.app.managers["TournamentManager"]
-        tournament = manager.get_tournament_by_id(data["tournament_id"])
-        round = tournament.rounds[data["round_id"]]
+        round = self.get_round_fromrequest()
 
-        for updating_game in data["games"]:
-            round.game_update(updating_game)
+        games = self.get_request("games")
         try:
-            manager.update_rounds(tournament)
+            for updating_game in games:
+                round.game_update(updating_game)
         except exception.InsertRoundException:
             self.app.alert_msg = "Les résultats n'ont pas pu être enregistrés."
             return None
         else:
-            self.app.alert_msg = "Les résultats ont éte pris en compte."
-            return tournament
+            self.app.managers["TournamentManager"].update_rounds(round.tournament)
+            self.app.alert_msg = (
+                "Les résultats des matchs existants ont éte pris en compte."
+            )
+            return round
 
 
 class CloseRoundCommand(AppCommand):
     def executate(self):
-        data = self.app.request
-        manager = self.app.managers["TournamentManager"]
-        tournament = manager.get_tournament_by_id(data["tournament_id"])
+        tournament = self.get_tournament_fromrequest()
 
         if tournament.last_round.allresults_known():
-            from datetime import date
-
-            date_today = date.today().strftime("%d/%m/%y")
-            tournament.last_round.end_datetime = date_today
-            manager.update_rounds(tournament)
+            tournament.last_round.end_datetime = self.app.now
+            self.app.managers["TournamentManager"].update_rounds(tournament)
 
             if tournament.nb_rounds < tournament.max_round:
                 self.app.alert_msg = (
@@ -180,7 +190,7 @@ class CloseRoundCommand(AppCommand):
                 self.app.alert_msg = (
                     "Le tournoi est cloturé (tous les tours sont finis)."
                 )
-            return tournament
+            return tournament.last_round
         else:
             self.app.alert_msg = (
                 "Le tour ne peut pas être cloturé (des résultats ne sont pas connus)."
@@ -191,39 +201,29 @@ class CloseRoundCommand(AppCommand):
 class StartNextRoundCommand(AppCommand):
     def executate(self):
         from gce2.model.round import Round
-        from datetime import date
 
-        data = self.app.request
-        manager = self.app.managers["TournamentManager"]
-        tournament = manager.get_tournament_by_id(data["tournament_id"])
-
-        date_today = date.today().strftime("%d/%m/%y")
+        tournament = self.get_tournament_fromrequest()
         nb_next_round = tournament.nb_rounds + 1
         next_round = Round(
             name=f"Tour {nb_next_round}",
-            start_datetime=date_today,
+            start_datetime=self.app.now,
             games=tournament.generate_ranked_games(),
         )
+
         try:
             tournament.add_round(next_round)
-            manager.update_rounds(tournament)
+            self.app.managers["TournamentManager"].update_rounds(tournament)
         except exception.InsertRoundException:
             self.app.alert_msg = "Le tour suivant n'a pas pu être créé."
             return None
         else:
             self.app.alert_msg = "Le tour suivant a correctement été créé."
-            return tournament
+            return tournament.last_round
 
 
 class GetRoundCommand(AppCommand):
     def executate(self):
-        manager = self.app.managers["TournamentManager"]
-        tournament_id = self.app.request["tournament_id"]
-        round_id = self.app.request["round_id"]
-
-        tournament = manager.get_tournament_by_id(tournament_id)
-        round = tournament.rounds[round_id]
-        return round
+        return self.get_round_fromrequest()
 
 
 class CLIAppCommand(AppCommand, ABC):
