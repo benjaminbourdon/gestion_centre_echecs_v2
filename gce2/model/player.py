@@ -1,5 +1,14 @@
+import re
+
+from dateutil import parser
+
+from gce2.utils import _is_str
+import gce2.config as config
+
+
 class Player:
     CORE_ATTRIBUTES = ("firstname", "lastname", "birthday", "federal_id")
+    FEDERALID_PATTERN = "^[A-Z]{2}[0-9]{5}$"
 
     def __init__(self, **kwargs) -> None:
         for key in self.CORE_ATTRIBUTES:
@@ -37,3 +46,28 @@ class Player:
     @property
     def fullname(self):
         return f"{self.firstname} {self.lastname}"
+
+    @property
+    def federal_id(self):
+        return self._federal_id
+
+    @federal_id.setter
+    def federal_id(self, value):
+        if _is_str(value) and re.match(self.FEDERALID_PATTERN, value):
+            self._federal_id = value
+        else:
+            raise AttributeError(name="federal_id", obj=self)
+
+    @property
+    def birthday(self):
+        datetime = self._birthday
+        return datetime.strftime(config.DATE_FORMAT)
+
+    @birthday.setter
+    def birthday(self, value):
+        try:
+            datetime = parser.parse(value, fuzzy=True, dayfirst=True)
+        except parser.ParserError:
+            raise AttributeError(name="birthday", obj=self)
+        else:
+            self._birthday = datetime

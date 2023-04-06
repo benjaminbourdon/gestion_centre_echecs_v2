@@ -1,7 +1,10 @@
 from abc import ABC
 
+from datetime import datetime
+
 import gce2.controller.commands as commands
 import gce2.exception.exception as exception
+import gce2.config as config
 
 
 class Application(ABC):
@@ -27,9 +30,18 @@ class Application(ABC):
             try:
                 respond = command.executate()
             except exception.InvalidRequestException:
-                self.alert_msg = "La requête est incorrecte. L'action n'a pas pu être réalisée."
+                if self.alert_msg == "":
+                    self.alert_msg = "La requête est incorrecte. L'action n'a pas pu être réalisée."
                 return
 
             if template is not None and callable(template):
                 respond = template(respond)
             self.respond = respond
+
+    @property
+    def now(self):
+        return datetime.now().strftime(config.DATETIME_FORMAT)
+
+    @property
+    def today(self):
+        return datetime.now().strftime(config.DATE_FORMAT)
