@@ -19,7 +19,7 @@ class CliView:
     FIELD_DESCRIPTION = {
         "lastname": "nom de famille",
         "firstname": "prénom",
-        "federal_id": "numéro fédéral",
+        "federal_id": "numéro fédéral (AB12345)",
         "birthday": "date de naissance (JJ/MM/AAAA)",
         "tournament_id": "identifiant du tournoi",
         "name": "nom",
@@ -214,28 +214,31 @@ class CliView:
         return "\n".join(lines)
 
     def template_resume_player(self, player: p.Player) -> str:
-        text = ["Détail du joueur :"]
-        for field in p.Player.CORE_ATTRIBUTES:
-            field_name = self.get_fieldname(field)
-            field_value = getattr(player, field)
-            text.append(f"{field_name:.<40} :\t{field_value}")
-        return "\n".join(text)
+        if isinstance(player, p.Player):
+            text = ["Détail du joueur :"]
+            for field in p.Player.CORE_ATTRIBUTES:
+                field_name = self.get_fieldname(field)
+                field_value = getattr(player, field)
+                text.append(f"{field_name:.<40} :\t{field_value}")
+            return "\n".join(text)
+        else:
+            return "Aucun joueur selectionné."
 
     def template_list_tournaments(self, tournaments_list: list[t.Tournament]) -> str:
         if tournaments_list is not None:
             lines = ["Voici la liste des tournois demandés :"]
             lines.extend(
                 [
-                    f"({tournament.doc_id:^4}) {tournament}"
+                    f"({tournament.doc_id}) {tournament}"
                     for tournament in tournaments_list
                 ]
             )
-            return "\n".join(lines)
+            return "\n\n".join(lines)
         else:
             return "Aucun tournoi ne correspond à votre demande."
 
     def template_resume_tournament(self, tournament: t.Tournament) -> str:
-        if tournament is not None:
+        if isinstance(tournament, t.Tournament):
             return f"Le tournoi {tournament.name} se déroule du {tournament.start_date} au {tournament.end_date}."
         else:
             return "Aucun tournoi ne correspond à votre demande"
@@ -245,7 +248,7 @@ class CliView:
 
         if tournament.nb_participants > 0:
             lines = ["Les participants au tournoi sont :"]
-            lines.extend([str(participant) for participant in list_participants])
+            lines.extend([str(participant) for participant in list_participants if isinstance(participant, p.Player)])
             return "\n".join(lines)
         else:
             return "Ce tournoi n'a pas encore de participants."
@@ -265,10 +268,10 @@ class CliView:
         lines = [f"Liste des tours :\n(Tournoi en {tournament.max_round} tours)"]
         for round in rounds:
             if round.iscompleted():
-                statut = "fini"
+                about_end = f"Fini le {round.end_datetime}"
             else:
-                statut = "en cours"
-            lines.append(f"> {round.name} ({statut})")
+                about_end = "En cours"
+            lines.append(f"> {round.name}\tDébuté le {round.start_datetime}.\t{about_end}")
         return "\n".join(lines)
 
     def template_resume_round(self, round: r.Round) -> str:

@@ -59,8 +59,8 @@ class Tournament:
 
     def __str__(self):
         return (
-            f"{self.name:<30}\t se déroule à {self.place:^15}, "
-            f"du {self.start_date} au {self.end_date}, en {self.max_round} tours.\t"
+            f"{self.name:<30}\n"
+            f"se déroule à {self.place}, du {self.start_date} au {self.end_date}, en {self.max_round} tours.\n"
             f"Description : {self.description}"
         )
 

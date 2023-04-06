@@ -59,7 +59,7 @@ class TournamentDynamicMenu(DynamicMenu):
                         text="Lancer le tour suivant",
                         request=self.request_tournament_id,
                         command=commands.StartNextRoundCommand(self.app),
-                        template=self.app.view.template_last_round,
+                        template=self.app.view.template_resume_round,
                     )
                 else:
                     if tournament.last_round.allresults_known():
@@ -67,14 +67,14 @@ class TournamentDynamicMenu(DynamicMenu):
                             text="Cloturer le tour en cours (plus de changement possible)",
                             request=self.request_tournament_id,
                             command=commands.CloseRoundCommand(self.app),
-                            template=self.app.view.template_last_round,
+                            template=self.app.view.template_resume_round,
                         )
                     else:
                         self.add_commands(
                             text="Ajouter des résultats de matchs au tour en cours",
                             request=self.request_unknown_results,
                             command=commands.PostGamesResultCommand(self.app),
-                            template=self.app.view.template_last_round,
+                            template=self.app.view.template_resume_round,
                         )
         else:
             if tournament.can_start():
