@@ -73,9 +73,6 @@ class Menu:
             if key is None or key in self.menuitems:
                 key = self.next_key
 
-            # if not callable(template):
-            #     template = str
-
             self.commanditems[key] = MenuItems(text, command, request, template)
 
     def create_submenu(self, name):

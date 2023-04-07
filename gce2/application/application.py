@@ -1,10 +1,9 @@
 from abc import ABC
-
 from datetime import datetime
 
+import gce2.config as config
 import gce2.controller.commands as commands
 import gce2.exception.exception as exception
-import gce2.config as config
 
 
 class Application(ABC):

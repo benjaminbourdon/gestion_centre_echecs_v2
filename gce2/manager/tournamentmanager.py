@@ -1,7 +1,5 @@
 from gce2 import database
-# from gce2.model.round import Round
 from gce2.model.tournament import Tournament
-# from gce2.exception.exception import InsertRoundException
 
 
 class TournamentManager:
@@ -41,23 +39,6 @@ class TournamentManager:
                 )
             else:
                 return None
-
-    # def add_round_in_tournament(self, id_tournament: int, round_data):
-    #     round = Round.deserialize(round_data)
-    #     tournament = self.get_tournament_by_id(id_tournament)
-    #     if round is None or tournament is None:
-    #         return None
-    #     else:
-    #         try:
-    #             tournament.add_round(round)
-    #         except InsertRoundException:
-    #             raise InsertRoundException
-    #         else:
-    #             with database.get_connexion_tournament() as json_file:
-    #                 json_file.update(
-    #                     self._add_unique("rounds", tournament.last_round.serialize()), doc_ids=[id_tournament]
-    #                 )
-    #             return tournament
 
     def add_participant_in_tournament(self, id_tournament, id_participant):
         with database.get_connexion_tournament() as json_file:
