@@ -1,5 +1,8 @@
 from pprint import pformat
 from typing import NewType, Self
+
+from dateutil import parser
+
 import gce2.config as c
 
 FEDERAL_ID = NewType("FEDERAL_ID", str)
@@ -8,7 +11,6 @@ GAME = tuple[tuple[FEDERAL_ID, SCORE], tuple[FEDERAL_ID, SCORE]]
 
 
 class Round:
-
     CORE_ATTRIBUTES = ("name", "start_datetime", "end_datetime", "games")
 
     def __init__(
@@ -54,6 +56,51 @@ class Round:
         if isinstance(new_tournament, Tournament):
             self._tournament = new_tournament
 
+    @property
+    def start_datetime(self):
+        datetime = self._start_datetime
+        if datetime is None:
+            return None
+        else:
+            return datetime.strftime(c.DATETIME_FORMAT)
+
+    @start_datetime.setter
+    def start_datetime(self, value):
+        if value is None:
+            self._end_datetime = None
+            return
+
+        try:
+            datetime = parser.parse(value, fuzzy=True, dayfirst=True)
+        except parser.ParserError:
+            raise AttributeError(name="start_datetime", obj=self)
+        else:
+            self._start_datetime = datetime
+        if value is None:
+            self._start_datetime = None
+            return
+
+    @property
+    def end_datetime(self):
+        datetime = self._end_datetime
+        if datetime is None:
+            return None
+        else:
+            return datetime.strftime(c.DATETIME_FORMAT)
+
+    @end_datetime.setter
+    def end_datetime(self, value):
+        if value is None:
+            self._end_datetime = None
+            return
+
+        try:
+            datetime = parser.parse(value, fuzzy=True, dayfirst=True)
+        except parser.ParserError:
+            raise AttributeError(name="end_datetime", obj=self)
+        else:
+            self._end_datetime = datetime
+
     def serialize(self) -> dict:
         return {
             attribute: getattr(self, attribute) for attribute in self.CORE_ATTRIBUTES
@@ -79,16 +126,7 @@ class Round:
         return False
 
     def game_exists(self, player1, player2) -> bool:
-        tested_game = [
-            [
-                player1,
-                c.SCORE["UNKNOW"]
-            ],
-            [
-                player2,
-                c.SCORE["UNKNOW"]
-            ]
-        ]
+        tested_game = [[player1, c.SCORE["UNKNOW"]], [player2, c.SCORE["UNKNOW"]]]
         for game in self.games:
             if self.same_game(tested_game, game):
                 return True

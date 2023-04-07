@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 import gce2.application.clicomponents.menu as m
 import gce2.config as c
 import gce2.exception.exception as exception
@@ -17,17 +19,17 @@ class CliView:
     NB_MAXTRY = 3
 
     FIELD_DESCRIPTION = {
-        "lastname": "nom de famille",
-        "firstname": "prénom",
-        "federal_id": "numéro fédéral (AB12345)",
-        "birthday": "date de naissance (JJ/MM/AAAA)",
-        "tournament_id": "identifiant du tournoi",
-        "name": "nom",
-        "description": "description",
-        "place": "lieu",
-        "start_date": "date de début (JJ/MM/AAAA)",
-        "end_date": "date de fin (JJ/MM/AAAA)",
-        "max_round": "nombre de tour maximum",
+        "lastname": "Nom de famille",
+        "firstname": "Prénom",
+        "federal_id": "Numéro fédéral (AB12345)",
+        "birthday": "Date de naissance (JJ/MM/AAAA)",
+        "tournament_id": "Identifiant du tournoi",
+        "name": "Nom",
+        "description": "Description",
+        "place": "Lieu",
+        "start_date": "Date de début (JJ/MM/AAAA)",
+        "end_date": "Date de fin (JJ/MM/AAAA)",
+        "max_round": "Nombre de tour maximum",
     }
 
     CANCEL_WORLD = "!"
@@ -65,7 +67,7 @@ class CliView:
     @classmethod
     def get_fieldname(self, field: str) -> str:
         if field in self.FIELD_DESCRIPTION:
-            return self.FIELD_DESCRIPTION[field].capitalize()
+            return self.FIELD_DESCRIPTION[field]
         else:
             return field.capitalize()
 
@@ -109,15 +111,12 @@ class CliView:
 
         data = {}
         for field in list_field:
-            if field in self.FIELD_DESCRIPTION:
-                text = self.FIELD_DESCRIPTION[field].capitalize()
-            else:
-                text = field.capitalize()
+            text = self.get_fieldname(field)
             if field in dict_default:
                 text += f' ("{dict_default[field]}" par défaut)'
 
             answer = self.cancellable_input(f"{text} > ")
-            if answer == "":
+            if answer == "" and field in dict_default:
                 data[field] = dict_default[field]
             else:
                 data[field] = answer
@@ -125,8 +124,8 @@ class CliView:
 
     def select_info(
         self, dict_choicies: dict[str | int, str], text_intro: str = None
-    ) -> str | int | None:
-        """Ask user to chose one valuem, by key values, among a list of possibilites
+    ) -> str | int:
+        """Ask user to chose one value, by key values, among a list of possibilites
 
         Args:
             dict_choicies (Dict[str  |  int, str]): key among wich user have to chose
@@ -243,12 +242,16 @@ class CliView:
         else:
             return "Aucun tournoi ne correspond à votre demande"
 
-    def template_list_participants(self, tournament: t.Tournament) -> str:
-        list_participants = tournament.participants
-
-        if tournament.nb_participants > 0:
+    def template_list_participants(self, list_participants: list[p.Player]) -> str:
+        if len(list_participants) > 0:
             lines = ["Les participants au tournoi sont :"]
-            lines.extend([str(participant) for participant in list_participants if isinstance(participant, p.Player)])
+            lines.extend(
+                [
+                    str(participant)
+                    for participant in list_participants
+                    if isinstance(participant, p.Player)
+                ]
+            )
             return "\n".join(lines)
         else:
             return "Ce tournoi n'a pas encore de participants."
@@ -271,7 +274,9 @@ class CliView:
                 about_end = f"Fini le {round.end_datetime}"
             else:
                 about_end = "En cours"
-            lines.append(f"> {round.name}\tDébuté le {round.start_datetime}.\t{about_end}")
+            lines.append(
+                f"> {round.name}\tDébuté le {round.start_datetime}.\t{about_end}"
+            )
         return "\n".join(lines)
 
     def template_resume_round(self, round: r.Round) -> str:
@@ -301,3 +306,31 @@ class CliView:
             result.append(text)
 
         return intro + "\n" + "\n".join(result)
+
+    def template_all_rounds(self, tournament: t.Tournament) -> str:
+        if tournament.nb_rounds == 0:
+            return "Ce tournoi n'a pas encore de tour enregistré."
+
+        lines = [f"Liste des tours :\n(Tournoi en {tournament.max_round} tours)"]
+        for round in tournament.rounds:
+            lines.append(self.template_resume_round(round))
+        return "\n\n".join(lines)
+
+    def template_score(self, tournament: t.Tournament) -> str:
+        intro = "Classement:\n"
+        intro += "(Victoire: {} point / Égalité: {} point / Défaite: {} point)\n".format(
+            c.SCORE["WIN"], c.SCORE["TIE"], c.SCORE["LOSE"]
+        )
+
+        dict_score = tournament.score_participants()
+        participants_score = [
+            (participant, dict_score[participant.federal_id])
+            for participant in tournament.participants
+        ]
+        participants_score.sort(key=itemgetter(1), reverse=True)
+
+        lines = [
+            f"{rank}.\t{participant.fullname} ({score})"
+            for rank, (participant, score) in enumerate(participants_score, start=1)
+        ]
+        return intro + "\n".join(lines)

@@ -62,10 +62,26 @@ class AppCommand(Command, ABC):
         else:
             return round
 
+    def orderby_fromrequest(self, list: list) -> list:
+        try:
+            orderby = self.get_request("orderby")
+        except exception.InvalidRequestException:
+            return list
+        else:
+            from operator import attrgetter
+
+            try:
+                sorted_list = sorted(list, key=attrgetter(orderby))
+            except AttributeError:
+                return list
+            else:
+                return sorted_list
+
 
 class GetAllPlayersCommand(AppCommand):
     def executate(self):
-        return self.app.managers["PlayerManager"].get_players()
+        list_players = self.app.managers["PlayerManager"].get_players()
+        return self.orderby_fromrequest(list_players)
 
 
 class GetPlayerCommand(AppCommand):
@@ -102,6 +118,13 @@ class GetTournamentCommand(AppCommand):
         return self.get_tournament_fromrequest()
 
 
+class GetParticipantsCommand(AppCommand):
+    def executate(self):
+        tournament = self.get_tournament_fromrequest()
+        list_participants = tournament.participants
+        return self.orderby_fromrequest(list_participants)
+
+
 class AddParticipant(AppCommand):
     def executate(self):
         tournament_id = self.get_request("tournament_id")
@@ -116,17 +139,17 @@ class AddParticipant(AppCommand):
             return None
         else:
             self.app.alert_msg = "Le participant a correctement éte ajouté."
-            return updated_tournament
+            return updated_tournament.participants
 
 
 class PostTournamentCommand(AppCommand):
     def executate(self):
         data = self.get_allrequests()
         manager = self.app.managers["TournamentManager"]
-        try:
-            new_tournament = manager.post_tournament(data)
-        except Exception:
-            raise Exception
+        new_tournament = manager.post_tournament(data)
+        if new_tournament is None:
+            self.app.alert_msg = "Le tournoi n'a pas éte ajouté (donnée invalide)."
+            raise exception.InvalidRequestException
         else:
             self.app.alert_msg = "Le tournoi a correctement été ajouté."
             return new_tournament
@@ -141,7 +164,7 @@ class StartTournamentCommand(AppCommand):
 
             first_round = Round(
                 name="Tour 1",
-                start_datetime=self.app.today,
+                start_datetime=self.app.now,
                 games=tournament.generate_random_games(),
             )
             try:

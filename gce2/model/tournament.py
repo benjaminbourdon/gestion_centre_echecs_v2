@@ -1,11 +1,14 @@
 import random
 from pprint import pformat
 
+from dateutil import parser
+
 import gce2.config as config
 import gce2.exception.exception as exception
 import gce2.manager.playermanager as pm
 import gce2.model.player as p
 import gce2.model.round as r
+from gce2.utils import _is_int
 
 
 class Tournament:
@@ -63,6 +66,45 @@ class Tournament:
             f"se déroule à {self.place}, du {self.start_date} au {self.end_date}, en {self.max_round} tours.\n"
             f"Description : {self.description}"
         )
+
+    @property
+    def start_date(self):
+        datetime = self._start_date
+        return datetime.strftime(config.DATE_FORMAT)
+
+    @start_date.setter
+    def start_date(self, value):
+        try:
+            datetime = parser.parse(value, fuzzy=True, dayfirst=True)
+        except parser.ParserError:
+            raise AttributeError(name="start_date", obj=self)
+        else:
+            self._start_date = datetime
+
+    @property
+    def end_date(self):
+        datetime = self._end_date
+        return datetime.strftime(config.DATE_FORMAT)
+
+    @end_date.setter
+    def end_date(self, value):
+        try:
+            datetime = parser.parse(value, fuzzy=True, dayfirst=True)
+        except parser.ParserError:
+            raise AttributeError(name="end_date", obj=self)
+        else:
+            self._end_date = datetime
+
+    @property
+    def max_round(self):
+        return self._max_round
+
+    @max_round.setter
+    def max_round(self, value):
+        if _is_int(value) and (int_value := int(value)) > 0:
+            self._max_round = int_value
+        else:
+            raise AttributeError(name="max_round", obj=self)
 
     def can_start(self) -> bool:
         nb_participants = len(self.participants)
@@ -156,18 +198,12 @@ class Tournament:
         if isinstance(participant, p.Player):
             self.participants.append(participant)
 
-    # @property
-    # def participants_names(self) -> dict[str, str]:
-    #     return {
-    #         player.federal_id: f"{player.firstname} {player.lastname}"
-    #         for player in self.participants
-    #     }
-
-    # def get_playerfullname_fromid(self, federal_id) -> str | None:
-    #     participants_names = self.participants_names
-    #     if federal_id in participants_names:
-    #         return participants_names[federal_id]
-    #     return None
+    @property
+    def participants_names(self) -> dict[str, str]:
+        return {
+            player.federal_id: f"{player.firstname} {player.lastname}"
+            for player in self.participants
+        }
 
     @property
     def nb_participants(self):
