@@ -71,3 +71,14 @@ Remarque : la limite utilisée de caractères par ligne est de 119.
 ## Données de test
 
 Un jeu de donnée de test est disponible dans *"\data-test"*. Pour s'en servir, il suffit d'en dupliquer le contenu dans le dossier data ou, plus simplement encore, de renommer le dossier *"data"* (ou encore de modifier de manière appropriée le fichier config.py).
+
+## Lancer en tant qu'API Flask
+
+Un module Flask permet de réaliser certaines actions via une API développé via la lib Flask.
+Pour la lancer, la commande suivante doit être executée depuis la racine :
+
+```
+flask --app api run
+```
+
+Dès lors, celle-ci est accessible par défaut à l'adresse *http://127.0.0.1:5000*.
