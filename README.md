@@ -81,4 +81,5 @@ Pour la lancer, la commande suivante doit être executée depuis la racine :
 flask --app api run
 ```
 
-Dès lors, celle-ci est accessible par défaut à l'adresse *http://127.0.0.1:5000*.
+Dès lors, dans sa version développement, le serveur d'API est accessible par défaut à l'adresse *http://127.0.0.1:5000*.
+Une documentation Swagger est disponible à l'adresse : *http://127.0.0.1:5500/swagger.html*
